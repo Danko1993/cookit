@@ -5,6 +5,7 @@ import com.example.cookit.entities.AppUser;
 import com.example.cookit.repositories.AppUserRepository;
 import com.example.cookit.services.AppUserDetailsService;
 import com.example.cookit.util.JwtUtil;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -36,16 +38,17 @@ public class AuthController {
     private AppUserRepository appUserRepository;
 
     @PostMapping("/login")
-    public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthRequestDto authRequestDto) {
+    public ResponseEntity<?> createAuthenticationToken(@RequestBody @Valid AuthRequestDto authRequestDto, BindingResult result) {
         log.info("Received authentication request");
 
         try {
             log.info("Starting authentication for username: {}", authRequestDto.username());
             Optional<AppUser> appUserOptional = appUserRepository.findByUsername(authRequestDto.username());
 
-            if (appUserOptional.isEmpty()) {
-                log.error("User {} not found", authRequestDto.username());
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect username or password.");
+            if (result.hasErrors()) {
+                log.warn("Validation errors: {}", result.getAllErrors());
+                return ResponseEntity.badRequest()
+                        .body("Validation errors: " + result.getAllErrors().get(0).getDefaultMessage());
             }
 
             AppUser appUser = appUserOptional.get();

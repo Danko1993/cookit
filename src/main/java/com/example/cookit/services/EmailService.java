@@ -19,8 +19,8 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
         helper.setFrom("cookit93@gmail.com");
         helper.setTo(to);
-        helper.setSubject("Aktywacja konta");
-        helper.setText(activationLink + "< < Kliknij tutaj any aktywować swoje konto.");
+        helper.setSubject("Account Activation");
+        helper.setText(activationLink + "< < Click here to activate Your account");
         mailSender.send(message);
     }
 }

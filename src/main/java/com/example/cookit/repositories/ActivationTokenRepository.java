@@ -9,5 +9,5 @@ import java.util.UUID;
 public interface ActivationTokenRepository extends JpaRepository <ActivationToken, UUID> {
 
     ActivationToken findActivationTokenByToken(String token);
-    ActivationToken deleteActivationTokenByAppUser(AppUser appUser);
+    void deleteActivationTokenByAppUser(AppUser appUser);
 }

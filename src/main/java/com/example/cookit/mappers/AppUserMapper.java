@@ -1,6 +1,6 @@
 package com.example.cookit.mappers;
 
-import com.example.cookit.DTO.AppUserDto;
+import com.example.cookit.DTO.RegisterDto;
 import com.example.cookit.entities.AppUser;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -9,6 +9,6 @@ import org.mapstruct.factory.Mappers;
 public interface AppUserMapper {
     AppUserMapper INSTANCE = Mappers.getMapper(AppUserMapper.class);
 
-    AppUser toEntity (AppUserDto appUserDto);
-    AppUserDto toDto(AppUser appUser);
+    AppUser toEntity (RegisterDto registerDto);
+    RegisterDto toDto(AppUser appUser);
 }

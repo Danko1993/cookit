@@ -1,12 +1,14 @@
 package com.example.cookit.controllers;
 
-import com.example.cookit.DTO.AppUserDto;
-import com.example.cookit.services.EmailService;
+import com.example.cookit.DTO.RegisterDto;
 import com.example.cookit.services.AppUserService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
 @Slf4j
 @RestController
 @RequestMapping("/register")
@@ -15,30 +17,42 @@ public class RegisterController {
     @Autowired
     private AppUserService userService;
 
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-
     @PostMapping
-    public String register(@RequestBody AppUserDto userDto){
-        log.info("rozpoczynam rejestracje");
-        return userService.register(userDto);
+    public ResponseEntity<String> register(@RequestBody @Valid RegisterDto registerDto, BindingResult result){
+        log.info("Starting registration for user : {}", registerDto.email());
+
+        log.info( "RegisterDto: {}", registerDto);
+
+        if (result!=null && result.hasErrors()) {
+            log.warn("Validation errors: {}", result.getAllErrors());
+            return ResponseEntity.badRequest()
+                    .body("Validation errors: " +
+                            result.getAllErrors().get(0).getDefaultMessage());
+        }else {
+            log.info("No validation errors");
+        }
+
+        return userService.registerUser(registerDto);
     }
 
     @GetMapping("/activate")
-    public String activate(@RequestParam("token") String token){
-        log.info("Rozpoczynam aktywację");
-        if (userService.activateAccount(token)){
-            return "Twoje konto zostało aktywowane";
-        }else {
-            return "Błąd aktywacji";
+    public ResponseEntity<String> activate(@RequestParam("token") String token){
+        log.info("Starting activation for account with token:{}", token);
+
+        if(token == null || token.isEmpty()){
+            log.warn("Activation token can not be empty");
+            return ResponseEntity.badRequest().body("Activation token can not be empty");
         }
+        return userService.activateAccount(token);
+
+
     }
     @PostMapping("/resend-token")
-    public String resendToken(@RequestParam("email")String email){
-        return userService.sendActivationToken(email);
+    public ResponseEntity<String> resendToken(@RequestParam("email")String email){
+        if (email == null || email.isEmpty()){
+            return ResponseEntity.badRequest().body("Email can not be empty");
+        }
+        return userService.resendToken(email);
+
     }
 }
