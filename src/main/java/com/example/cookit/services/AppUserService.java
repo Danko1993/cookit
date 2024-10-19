@@ -34,6 +34,7 @@ public class AppUserService {
     @Autowired
     private ActivationTokenService activationTokenService;
 
+
     private final AppUserMapper appUserMapper = AppUserMapper.INSTANCE;
 
 
@@ -58,7 +59,8 @@ public class AppUserService {
 
     public ResponseEntity<String> activateAccount(String token){
        if (activationTokenService.validateActivationToken(token)){
-           AppUser appUser = activationTokenRepository.findActivationTokenByToken(token).getAppUser();
+           ActivationToken activationToken = activationTokenRepository.findActivationTokenByToken(token);
+           AppUser appUser = activationToken.getAppUser();
            appUser.setEnabled(true);
            appUserRepository.save(appUser);
            log.info("Account:{} activated successfully",

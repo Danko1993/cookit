@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class cookit {
+public class Cookit {
 
     public static void main(String[] args) {
-        SpringApplication.run(cookit.class, args);
+        SpringApplication.run(Cookit.class, args);
     }
 
 }

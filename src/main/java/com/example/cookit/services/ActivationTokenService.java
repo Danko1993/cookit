@@ -9,11 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Optional;
 import java.util.UUID;
 @Slf4j
 @Service
@@ -33,7 +32,8 @@ public class ActivationTokenService {
         } catch (MessagingException e){
             String errors = e.getMessage();
             log.info("Activation token for user {} could not be sent due to: {}",appUser.getUsername(), errors);
-            return new ResponseEntity<>("Activation emial for user"
+            this.deleteActivationToken(appUser);
+            return new ResponseEntity<>("Activation emial for user "
                     +appUser.getUsername()+
                     " could not be sent due to: "+errors, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -42,7 +42,7 @@ public class ActivationTokenService {
                 +appUser.getUsername()+" sent successfully",HttpStatus.OK);
     }
 
-    private void createActivationToken(AppUser appUser, String token){
+    public void createActivationToken(AppUser appUser, String token){
             ActivationToken activationToken = new ActivationToken();
             activationToken.setToken(token);
             activationToken.setAppUser(appUser);
@@ -64,11 +64,11 @@ public class ActivationTokenService {
 
     }
 
-    private boolean isTokenValid(ActivationToken activationToken){
+    public boolean isTokenValid(ActivationToken activationToken){
         Date currentDate = new Date();
         return currentDate.before(activationToken.getExpiryDate());
     }
-    @Transactional
+
     public void deleteActivationToken(AppUser appUser){
         activationTokenRepository.deleteActivationTokenByAppUser(appUser);
     }
