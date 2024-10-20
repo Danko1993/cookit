@@ -21,8 +21,6 @@ public class RegisterController {
     public ResponseEntity<String> register(@RequestBody @Valid RegisterDto registerDto, BindingResult result){
         log.info("Starting registration for user : {}", registerDto.email());
 
-        log.info( "RegisterDto: {}", registerDto);
-
         if (result!=null && result.hasErrors()) {
             log.warn("Validation errors: {}", result.getAllErrors());
             return ResponseEntity.badRequest()
@@ -47,7 +45,7 @@ public class RegisterController {
 
 
     }
-    @PostMapping("/resend-token")
+    @PostMapping("/resend_token")
     public ResponseEntity<String> resendToken(@RequestParam("email")String email){
         if (email == null || email.isEmpty()){
             return ResponseEntity.badRequest().body("Email can not be empty");

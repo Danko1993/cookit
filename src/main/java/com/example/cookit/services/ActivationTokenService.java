@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.Calendar;
@@ -41,7 +42,7 @@ public class ActivationTokenService {
         return new ResponseEntity<>("Activation email for user "
                 +appUser.getUsername()+" sent successfully",HttpStatus.OK);
     }
-
+    @Transactional
     public void createActivationToken(AppUser appUser, String token){
             ActivationToken activationToken = new ActivationToken();
             activationToken.setToken(token);
@@ -68,7 +69,7 @@ public class ActivationTokenService {
         Date currentDate = new Date();
         return currentDate.before(activationToken.getExpiryDate());
     }
-
+    @Transactional
     public void deleteActivationToken(AppUser appUser){
         activationTokenRepository.deleteActivationTokenByAppUser(appUser);
     }

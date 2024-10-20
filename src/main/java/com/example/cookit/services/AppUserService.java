@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -37,7 +38,7 @@ public class AppUserService {
 
     private final AppUserMapper appUserMapper = AppUserMapper.INSTANCE;
 
-
+    @Transactional
     public ResponseEntity<String> registerUser(RegisterDto registerDto){
         log.info("Checking if email:{} is already taken", registerDto.email());
         if (appUserRepository.findByEmail(registerDto.email()) !=null){
@@ -56,7 +57,7 @@ public class AppUserService {
         return activationTokenService.sendActivationToken(appUser);
     }
 
-
+    @Transactional
     public ResponseEntity<String> activateAccount(String token){
        if (activationTokenService.validateActivationToken(token)){
            ActivationToken activationToken = activationTokenRepository.findActivationTokenByToken(token);

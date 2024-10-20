@@ -1,11 +1,11 @@
 package com.example.cookit.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -25,4 +25,7 @@ public class AppUser {
     private String roles;
 
     private boolean enabled;
+    @OneToMany(mappedBy = "appUser")
+    private List<Meal> meals;
+
 }
