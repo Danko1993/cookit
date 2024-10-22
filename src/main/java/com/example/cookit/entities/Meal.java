@@ -3,7 +3,9 @@ package com.example.cookit.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,5 +28,7 @@ public class Meal {
     @MapKeyJoinColumn(name = "ingredient_id")
     private Map<Ingredient, Double> ingredientsWithWeight ;
 
+    @ManyToMany(mappedBy = "meals", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<MealSchedule> mealSchedules;
 
 }

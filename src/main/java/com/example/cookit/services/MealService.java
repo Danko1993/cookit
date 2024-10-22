@@ -5,6 +5,7 @@ import com.example.cookit.DTO.UpdateMealDto;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.entities.Meal;
+import com.example.cookit.entities.MealSchedule;
 import com.example.cookit.mappers.MealMapper;
 import com.example.cookit.repositories.AppUserRepository;
 import com.example.cookit.repositories.IngredientRepository;
@@ -151,4 +152,5 @@ public class MealService {
         log.warn("Meal with id {} not found", mealId);
         return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
     }
+
 }

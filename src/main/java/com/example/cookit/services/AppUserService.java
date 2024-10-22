@@ -39,12 +39,12 @@ public class AppUserService {
     private final AppUserMapper appUserMapper = AppUserMapper.INSTANCE;
 
     @Transactional
-    public ResponseEntity<String> registerUser(RegisterDto registerDto){
+    public ResponseEntity<String> registerUser(RegisterDto registerDto) {
         log.info("Checking if email:{} is already taken", registerDto.email());
-        if (appUserRepository.findByEmail(registerDto.email()) !=null){
+        if (appUserRepository.findByEmail(registerDto.email()) != null) {
             log.info("Email:{} is already taken", registerDto.email());
             return new ResponseEntity<>("Email: "
-                    +registerDto.email()+" is already taken", HttpStatus.CONFLICT);
+                    + registerDto.email() + " is already taken", HttpStatus.CONFLICT);
         }
         AppUser appUser = appUserMapper.toEntity(registerDto);
         appUser.setPassword(passwordEncoder.encode(appUser.getPassword()));
@@ -58,33 +58,35 @@ public class AppUserService {
     }
 
     @Transactional
-    public ResponseEntity<String> activateAccount(String token){
-       if (activationTokenService.validateActivationToken(token)){
-           ActivationToken activationToken = activationTokenRepository.findActivationTokenByToken(token);
-           AppUser appUser = activationToken.getAppUser();
-           appUser.setEnabled(true);
-           appUserRepository.save(appUser);
-           log.info("Account:{} activated successfully",
-                   activationTokenRepository.findActivationTokenByToken(token).getAppUser().getUsername());
-           return new ResponseEntity<>("Activation successful", HttpStatus.OK);
-       }else {
-           log.info("Invalid activation token");
-           return new ResponseEntity<>("Invalid activation token", HttpStatus.CONFLICT);
-       }
-    }
-
-    public ResponseEntity<String> resendToken(String email){
-        if (appUserRepository.findByEmail(email) != null){
-            log.info("Resending activation token for email: {}", email);
-            activationTokenService.deleteActivationToken(appUserRepository.findByEmail(email));
-            return activationTokenService.sendActivationToken(appUserRepository.findByEmail(email));
-        }else {
-            log.info("Email: {} not found", email);
-            return new ResponseEntity<>("Email: "+email+" not found", HttpStatus.NOT_FOUND);
+    public ResponseEntity<String> activateAccount(String token) {
+        if (activationTokenService.validateActivationToken(token)) {
+            ActivationToken activationToken = activationTokenRepository.findActivationTokenByToken(token);
+            AppUser appUser = activationToken.getAppUser();
+            appUser.setEnabled(true);
+            appUserRepository.save(appUser);
+            log.info("Account:{} activated successfully",
+                    activationTokenRepository.findActivationTokenByToken(token).getAppUser().getUsername());
+            return new ResponseEntity<>("Activation successful", HttpStatus.OK);
+        } else {
+            log.info("Invalid activation token");
+            return new ResponseEntity<>("Invalid activation token", HttpStatus.CONFLICT);
         }
     }
 
+    public ResponseEntity<String> resendToken(String email) {
+        if (appUserRepository.findByEmail(email) != null) {
+            log.info("Resending activation token for email: {}", email);
+            activationTokenService.deleteActivationToken(appUserRepository.findByEmail(email));
+            return activationTokenService.sendActivationToken(appUserRepository.findByEmail(email));
+        } else {
+            log.info("Email: {} not found", email);
+            return new ResponseEntity<>("Email: " + email + " not found", HttpStatus.NOT_FOUND);
+        }
+    }
 
+    public boolean userExists(UUID id) {
+        return appUserRepository.existsById(id);
+    }
 
 
 }

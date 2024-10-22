@@ -2,6 +2,7 @@ package com.example.cookit.services;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.exceptions.UserNotActivatedException;
 import com.example.cookit.repositories.AppUserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
