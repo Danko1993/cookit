@@ -6,10 +6,7 @@ import com.example.cookit.DTO.SendMealScheduleDto;
 import com.example.cookit.DTO.UpdateMealScheduleDto;
 import com.example.cookit.entities.Meal;
 import com.example.cookit.entities.MealSchedule;
-import com.example.cookit.mappers.MealMapper;
 import com.example.cookit.mappers.MealScheduleMapper;
-import com.example.cookit.repositories.DietPlanRepository;
-import com.example.cookit.repositories.MealRepository;
 import com.example.cookit.repositories.MealScheduleRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,30 +22,26 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class MealScheduleService {
-    @Autowired
-    private DietPlanRepository dietPlanRepository;
 
     private final MealScheduleMapper mealScheduleMapper = MealScheduleMapper.INSTANCE;
-    private final MealMapper mealMapper = MealMapper.INSTANCE;
+
     @Autowired
     private MealScheduleRepository mealScheduleRepository;
     @Autowired
-    private MealRepository mealRepository;
+    private DietPlanService dietPlanService;
+    @Autowired
+    private MealService mealService;
 
 
     @Transactional
     public ResponseEntity<String> addMealScheduleAndBindWithDietPlan(MealScheduleDto mealScheduleDto) {
         log.info("Checking id diet plan with id {} exists.", mealScheduleDto.dietPlanId());
-        if (dietPlanRepository.findById(mealScheduleDto.dietPlanId()).isPresent()) {
+        if (dietPlanService.existById(mealScheduleDto.dietPlanId())) {
             log.info("Diet plan with id {} found.", mealScheduleDto.dietPlanId());
-            boolean checkMeals = this.validateMealsIds(mealScheduleDto.mealsIds());
+            boolean checkMeals = mealService.validateMealsIds(mealScheduleDto.mealsIds());
             if (checkMeals) {
                 MealSchedule mealSchedule = mealScheduleMapper.toEntity(mealScheduleDto);
-                List<Meal> meals = new ArrayList<>();
-                for (UUID mealId : mealScheduleDto.mealsIds()) {
-                    Meal meal = mealRepository.findById(mealId).orElse(null);
-                    meals.add(meal);
-                }
+                List<Meal> meals = mealService.getMealsById(mealScheduleDto.mealsIds());
                 mealSchedule.setMeals(meals);
                 mealScheduleRepository.save(mealSchedule);
                 log.info("Meal schedule added successfully.");
@@ -70,13 +63,9 @@ public class MealScheduleService {
             log.info("Meal schedule with id {} found.", updateMealScheduleDto.mealScheduleId());
             MealSchedule existingMealSchedule = mealScheduleRepository.findById(updateMealScheduleDto.mealScheduleId()).get();
             existingMealSchedule.setDate(updateMealScheduleDto.date());
-            boolean checkMeals = this.validateMealsIds(updateMealScheduleDto.mealIds());
+            boolean checkMeals = mealService.validateMealsIds(updateMealScheduleDto.mealIds());
             if (checkMeals) {
-                List<Meal> meals = new ArrayList<>();
-                for (UUID mealId : updateMealScheduleDto.mealIds()) {
-                    Meal meal = mealRepository.findById(mealId).orElse(null);
-                    meals.add(meal);
-                }
+                List<Meal> meals = mealService.getMealsById(updateMealScheduleDto.mealIds());
                 existingMealSchedule.setMeals(meals);
             } else {
                 log.warn("At least one meal not found in database.");
@@ -91,19 +80,15 @@ public class MealScheduleService {
 
     public ResponseEntity<List<SendMealScheduleDto>> getMealSchedulesByDietPlanId(UUID id) {
         log.info("Checking id diet plan with id {} exists.", id);
-        if (dietPlanRepository.findById(id).isPresent()) {
+        if (dietPlanService.existById(id)) {
             log.info("Diet plan with id {} found.", id);
-            List<MealSchedule> mealSchedules = dietPlanRepository.findById(id).get().getMealSchedules();
+            List<MealSchedule> mealSchedules = dietPlanService.getById(id).getMealSchedules();
             List<SendMealScheduleDto> result = new ArrayList<>();
             for (MealSchedule mealSchedule : mealSchedules) {
                 SendMealScheduleDto sendMealScheduleDto = mealScheduleMapper.toSendMealScheduleDto(mealSchedule);
                 List<Meal> meals = mealSchedule.getMeals();
-                List<MealDto> mealDtoList = new ArrayList<>();
-                for (Meal meal : meals) {
-                    mealMapper.toDto(meal);
-                    mealDtoList.add(mealMapper.toDto(meal));
-                    sendMealScheduleDto.setMeals(mealDtoList);
-                }
+                List<MealDto> mealDtoList = mealService.mapMealsToDto(meals);
+                sendMealScheduleDto.setMeals(mealDtoList);
                 result.add(sendMealScheduleDto);
             }
             log.info("Meal schedules to be sent {}.", result);
@@ -132,16 +117,6 @@ public class MealScheduleService {
     public boolean checkMealSchedule(UUID mealScheduleId) {
         log.info("Checking if meal schedule with id {} exists.", mealScheduleId);
         return mealScheduleRepository.findById(mealScheduleId).isPresent();
-    }
-
-    public boolean validateMealsIds(List<UUID> mealsIds) {
-
-        for (UUID mealId : mealsIds) {
-            if (!mealRepository.findById(mealId).isPresent()) {
-                return false;
-            }
-        }
-        return true;
     }
 
 }

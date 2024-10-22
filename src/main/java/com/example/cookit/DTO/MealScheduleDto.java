@@ -1,6 +1,5 @@
 package com.example.cookit.DTO;
 
-import com.example.cookit.entities.Meal;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.Date;

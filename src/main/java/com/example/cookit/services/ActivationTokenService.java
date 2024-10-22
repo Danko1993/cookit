@@ -71,6 +71,11 @@ public class ActivationTokenService {
     }
     @Transactional
     public void deleteActivationToken(AppUser appUser){
+        log.info("Deleting activation token for user "+appUser.getUsername());
         activationTokenRepository.deleteActivationTokenByAppUser(appUser);
+    }
+
+    public ActivationToken getActivationTokenByToken(String token){
+        return activationTokenRepository.findActivationTokenByToken(token);
     }
 }

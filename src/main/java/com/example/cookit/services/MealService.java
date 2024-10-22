@@ -5,7 +5,6 @@ import com.example.cookit.DTO.UpdateMealDto;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.entities.Meal;
-import com.example.cookit.entities.MealSchedule;
 import com.example.cookit.mappers.MealMapper;
 import com.example.cookit.repositories.AppUserRepository;
 import com.example.cookit.repositories.IngredientRepository;
@@ -151,6 +150,40 @@ public class MealService {
         }
         log.warn("Meal with id {} not found", mealId);
         return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+    }
+
+    public Meal getById (UUID mealId) {
+        return mealRepository.findMealById(mealId);
+    }
+
+    public List<MealDto> mapMealsToDto (List<Meal> meals) {
+        List<MealDto> mealDtos = new ArrayList<>();
+        for (Meal meal : meals) {
+            this.mapMealToDto(meal);
+        }
+        return mealDtos;
+    }
+    public MealDto mapMealToDto (Meal meal) {
+      MealDto mealDto = mealMapper.toDto(meal);
+      return mealDto;
+    }
+
+    public List<Meal> getMealsById(List<UUID> mealIds) {
+        List<Meal> meals = new ArrayList<>();
+        for (UUID id : mealIds) {
+            Meal meal = this.getById(id);
+            meals.add(meal);
+        }
+        return meals;
+    }
+    public boolean validateMealsIds(List<UUID> mealsIds) {
+
+        for (UUID mealId : mealsIds) {
+            if (!mealRepository.findById(mealId).isPresent()) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

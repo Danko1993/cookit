@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class RegisterController {
 
     @Autowired
-    private AppUserService userService;
+    private AppUserService appUserService;
 
     @PostMapping
     public ResponseEntity<String> register(@RequestBody @Valid RegisterDto registerDto, BindingResult result){
@@ -25,12 +25,12 @@ public class RegisterController {
             log.warn("Validation errors: {}", result.getAllErrors());
             return ResponseEntity.badRequest()
                     .body("Validation errors: " +
-                            result.getAllErrors().get(0).getDefaultMessage());
+                            result.getAllErrors());
         }else {
             log.info("No validation errors");
         }
 
-        return userService.registerUser(registerDto);
+        return appUserService.registerUser(registerDto);
     }
 
     @GetMapping("/activate")
@@ -41,7 +41,7 @@ public class RegisterController {
             log.warn("Activation token can not be empty");
             return ResponseEntity.badRequest().body("Activation token can not be empty");
         }
-        return userService.activateAccount(token);
+        return appUserService.activateAccount(token);
 
 
     }
@@ -50,7 +50,7 @@ public class RegisterController {
         if (email == null || email.isEmpty()){
             return ResponseEntity.badRequest().body("Email can not be empty");
         }
-        return userService.resendToken(email);
+        return appUserService.resendToken(email);
 
     }
 }

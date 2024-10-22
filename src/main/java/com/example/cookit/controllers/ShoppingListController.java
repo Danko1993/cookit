@@ -2,9 +2,6 @@ package com.example.cookit.controllers;
 
 import com.example.cookit.DTO.ReadyShopingListDto;
 import com.example.cookit.DTO.ShoppingListDto;
-import com.example.cookit.entities.Ingredient;
-import com.example.cookit.entities.Meal;
-import com.example.cookit.entities.MealSchedule;
 import com.example.cookit.services.ShoppingListService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +12,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController

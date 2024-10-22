@@ -3,7 +3,7 @@ package com.example.cookit.DTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.UUID;
+
 
 public record IngredientDto(
         @NotBlank(message = "Name can not be empty.")

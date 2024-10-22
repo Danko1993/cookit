@@ -4,9 +4,8 @@ import com.example.cookit.DTO.RegisterDto;
 import com.example.cookit.entities.ActivationToken;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.mappers.AppUserMapper;
-import com.example.cookit.repositories.ActivationTokenRepository;
 import com.example.cookit.repositories.AppUserRepository;
-import jakarta.mail.MessagingException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,8 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Calendar;
-import java.util.Date;
+
 import java.util.UUID;
 
 @Service
@@ -25,9 +23,6 @@ public class AppUserService {
 
     @Autowired
     private AppUserRepository appUserRepository;
-
-    @Autowired
-    private ActivationTokenRepository activationTokenRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -60,12 +55,12 @@ public class AppUserService {
     @Transactional
     public ResponseEntity<String> activateAccount(String token) {
         if (activationTokenService.validateActivationToken(token)) {
-            ActivationToken activationToken = activationTokenRepository.findActivationTokenByToken(token);
+            ActivationToken activationToken = activationTokenService.getActivationTokenByToken(token);
             AppUser appUser = activationToken.getAppUser();
             appUser.setEnabled(true);
             appUserRepository.save(appUser);
             log.info("Account:{} activated successfully",
-                    activationTokenRepository.findActivationTokenByToken(token).getAppUser().getUsername());
+                    activationTokenService.getActivationTokenByToken(token).getAppUser().getUsername());
             return new ResponseEntity<>("Activation successful", HttpStatus.OK);
         } else {
             log.info("Invalid activation token");
@@ -74,9 +69,10 @@ public class AppUserService {
     }
 
     public ResponseEntity<String> resendToken(String email) {
-        if (appUserRepository.findByEmail(email) != null) {
+        AppUser appUser = appUserRepository.findByEmail(email);
+        if (appUser != null) {
             log.info("Resending activation token for email: {}", email);
-            activationTokenService.deleteActivationToken(appUserRepository.findByEmail(email));
+            activationTokenService.deleteActivationToken(appUser);
             return activationTokenService.sendActivationToken(appUserRepository.findByEmail(email));
         } else {
             log.info("Email: {} not found", email);
@@ -86,6 +82,10 @@ public class AppUserService {
 
     public boolean userExists(UUID id) {
         return appUserRepository.existsById(id);
+    }
+
+    public AppUser getUserById(UUID id) {
+        return appUserRepository.findById(id).orElse(null);
     }
 
 

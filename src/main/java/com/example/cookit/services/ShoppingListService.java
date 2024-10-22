@@ -6,8 +6,6 @@ import com.example.cookit.entities.Meal;
 import com.example.cookit.entities.MealSchedule;
 import com.example.cookit.entities.ShoppingList;
 import com.example.cookit.mappers.ShoppingListMapper;
-import com.example.cookit.repositories.AppUserRepository;
-import com.example.cookit.repositories.MealScheduleRepository;
 import com.example.cookit.repositories.ShoppingListRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,18 +21,15 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class ShoppingListService {
-    @Autowired
-    private AppUserRepository appUserRepository;
 
     private final ShoppingListMapper shoppingListMapper = ShoppingListMapper.INSTANCE;
-    @Autowired
-    private MealScheduleRepository mealScheduleRepository;
+
     @Autowired
     private ShoppingListRepository shoppingListRepository;
+
     @Autowired
     private MealScheduleService mealScheduleService;
-    @Autowired
-    private MealService mealService;
+
     @Autowired
     private AppUserService appUserService;
 
@@ -79,7 +74,7 @@ public class ShoppingListService {
     }
 
     public ResponseEntity<List<ReadyShopingListDto>> getReadyShoppingListsByUser(UUID appUserId) {
-        List<ShoppingList> shoppingLists = appUserRepository.findAppUserById(appUserId).getShoppingLists();
+        List<ShoppingList> shoppingLists = appUserService.getUserById(appUserId).getShoppingLists();
         if (shoppingLists == null || shoppingLists.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }

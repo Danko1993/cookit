@@ -5,7 +5,6 @@ import com.example.cookit.DTO.UpdateDietPlanDto;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.entities.DietPlan;
 import com.example.cookit.mappers.DietPlanMapper;
-import com.example.cookit.repositories.AppUserRepository;
 import com.example.cookit.repositories.DietPlanRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,18 +25,19 @@ public class DietPlanService {
     @Autowired
     private  DietPlanRepository dietPlanRepository;
     @Autowired
-    private AppUserRepository appUserRepository;
+    private AppUserService appUserService;
 
     @Transactional
     public ResponseEntity<String> addDietPlan(DietPlanDto dietPlanDto) {
-        if (appUserRepository.findAppUserById(dietPlanDto.appUserId())==null){
+        boolean appUserExist = appUserService.userExists(dietPlanDto.appUserId());
+        if (!appUserExist){
             log.warn("User with id :{} not found", dietPlanDto.appUserId());
             return new ResponseEntity<>
                     ("User with id:"+dietPlanDto.appUserId()+" not found", HttpStatus.NOT_FOUND);
         }
         log.info("Starting saving Diet plan : {}", dietPlanDto.name());
         DietPlan dietPlan = dietPlanMapper.toEntity(dietPlanDto);
-        dietPlan.setAppUser(appUserRepository.findAppUserById(dietPlanDto.appUserId()));
+        dietPlan.setAppUser(appUserService.getUserById(dietPlanDto.appUserId()));
         dietPlanRepository.save(dietPlan);
         log.info("Saved Diet plan : {}", dietPlan.getName());
         return new ResponseEntity<>("Saved Diet plan"+dietPlan.getName(), HttpStatus.CREATED);
@@ -64,12 +64,12 @@ public class DietPlanService {
 
     public ResponseEntity<List<DietPlanDto>> getDietPlansByUserId(UUID userId) {
         log.info("Checking if user with id {} exists", userId);
-        if (appUserRepository.findAppUserById(userId)==null){
+        if (!appUserService.userExists(userId)) {
             log.warn("User with id :{} not found", userId);
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         log.info("User with id {} found", userId);
-        AppUser appUser = appUserRepository.findAppUserById(userId);
+        AppUser appUser = appUserService.getUserById(userId);
         List<DietPlan> dietPlans = dietPlanRepository.findDietPlansByAppUser(appUser);
         List<DietPlanDto> result = dietPlans.stream().
                 map(dietPlan -> dietPlanMapper.toDto(dietPlan)
@@ -88,5 +88,13 @@ public class DietPlanService {
         }
         log.warn("Diet plan with id {} not found", id);
         return new ResponseEntity<>("Diet plan with id "+id+"not found", HttpStatus.NOT_FOUND);
+    }
+
+    public boolean existById(UUID id) {
+        log.info("Checking if diet plan with id {} exists", id);
+        return dietPlanRepository.existsById(id);
+    }
+    public DietPlan getById(UUID id) {
+        return dietPlanRepository.findById(id).orElse(null);
     }
 }
