@@ -12,7 +12,7 @@ import java.util.UUID;
 @Repository
 public interface DietPlanRepository extends JpaRepository<DietPlan, UUID> {
 
-    Optional<DietPlan> findById(UUID id);
+     DietPlan getDietPlanById(UUID id);
     void deleteById(UUID id);
     List<DietPlan> findDietPlansByAppUser(AppUser appUser);
 }

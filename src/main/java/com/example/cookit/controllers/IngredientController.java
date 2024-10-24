@@ -4,9 +4,11 @@ import com.example.cookit.DTO.IngredientDto;
 import com.example.cookit.DTO.UpdateIngredientDto;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.services.IngredientService;
+import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.validation.BindingResult;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/ingredient")
@@ -21,13 +24,14 @@ import java.util.UUID;
 public class IngredientController {
     @Autowired
     private IngredientService ingredientService;
+    @Autowired
+    private ValidationErrorService validationErrorService;
 
     @PostMapping("/add")
     public ResponseEntity<String> addIngredient(@RequestBody @Valid IngredientDto ingredientDto, BindingResult result) {
         log.info("Preparing ingredient {} to save in data base", ingredientDto.name());
         if (result!=null && result.hasErrors()) {
-            log.warn("Validation failed for ingredient {} due to :{}", ingredientDto.name(), result.getAllErrors());
-            return ResponseEntity.badRequest().body("Validation erros :" + result.getAllErrors().toString());
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Validation for ingredient {} successful", ingredientDto.name());
         return ingredientService.addIngredient(ingredientDto);
@@ -37,8 +41,7 @@ public class IngredientController {
     public ResponseEntity<String> addIngredients(@RequestBody @Valid List<IngredientDto> ingredientDtos, BindingResult result) {
         log.info("Preparing ingredients {} to save in data base", ingredientDtos.toString());
         if (result!=null && result.hasErrors()) {
-            log.warn("Validation erros : {}", result.getAllErrors());
-            return ResponseEntity.badRequest().body("Validation erros :" + result.getAllErrors().toString());
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Validation for ingredients {} successful", ingredientDtos.toString());
         return ingredientService.addIngredients(ingredientDtos);
@@ -48,8 +51,7 @@ public class IngredientController {
     public ResponseEntity<String> updateIngredient(@RequestBody @Valid UpdateIngredientDto updateIngredientDto, BindingResult result) {
         log.info("Preparing ingredient {} to update in data base", updateIngredientDto.name());
         if (result!=null && result.hasErrors()) {
-            log.warn("Validation failed for ingredient {} due to :{}", updateIngredientDto.name(), result.getAllErrors());
-            return ResponseEntity.badRequest().body("Validation erros :" + result.getAllErrors().toString());
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Validation for ingredient {} successful", updateIngredientDto.name());
         return ingredientService.updateIngredient(updateIngredientDto);
@@ -69,4 +71,5 @@ public class IngredientController {
         log.info("Preparing ingredient with id {} to retrieve in data base", id);
         return ingredientService.getIngredientById(id);
     }
+
 }

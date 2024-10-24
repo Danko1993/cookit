@@ -16,7 +16,6 @@ public interface MealScheduleMapper {
 
     MealScheduleMapper INSTANCE = Mappers.getMapper(MealScheduleMapper.class);
 
-    @Mapping(target = "dietPlan.id", source = "dietPlanId")
     @Mapping(target = "meals", ignore = true)
     MealSchedule toEntity(MealScheduleDto mealScheduleDto);
 

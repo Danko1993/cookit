@@ -57,6 +57,10 @@ public class AppUserService {
         if (activationTokenService.validateActivationToken(token)) {
             ActivationToken activationToken = activationTokenService.getActivationTokenByToken(token);
             AppUser appUser = activationToken.getAppUser();
+            if (appUser.isEnabled()) {
+                log.info("User: {} is active", appUser.getUsername());
+                return new ResponseEntity<>("Account is already active", HttpStatus.CONFLICT);
+            }
             appUser.setEnabled(true);
             appUserRepository.save(appUser);
             log.info("Account:{} activated successfully",

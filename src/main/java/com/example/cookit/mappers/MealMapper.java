@@ -1,6 +1,7 @@
 package com.example.cookit.mappers;
 
 import com.example.cookit.DTO.MealDto;
+import com.example.cookit.DTO.SendMealDto;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.entities.Meal;
 import org.mapstruct.Mapper;
@@ -20,7 +21,7 @@ public interface MealMapper {
 
     @Mapping(source = "appUser.id",target = "appUserId")
     @Mapping(target = "ingredientsWithWeightDto", source = "ingredientsWithWeight")
-    MealDto toDto(Meal meal);
+    SendMealDto toSendMealDto(Meal meal);
 
     default Map<UUID,Double> mapIngredientsWithWeight(Map<Ingredient,Double> ingredientsWithWeight) {
         Map<UUID,Double> ingredientsWithWeightDto = new HashMap<>();

@@ -3,6 +3,7 @@ package com.example.cookit.controllers;
 import com.example.cookit.DTO.ReadyShopingListDto;
 import com.example.cookit.DTO.ShoppingListDto;
 import com.example.cookit.services.ShoppingListService;
+import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,13 +20,14 @@ import java.util.*;
 public class ShoppingListController {
     @Autowired
     private ShoppingListService shoppingListService;
+    @Autowired
+    ValidationErrorService validationErrorService;
 
     @PostMapping("/add")
-    public ResponseEntity<String> addShoppingListAndBindToUser(@RequestBody @Valid ShoppingListDto shoppingListDto, BindingResult bindingResult) {
+    public ResponseEntity<String> addShoppingListAndBindToUser(@RequestBody @Valid ShoppingListDto shoppingListDto, BindingResult result) {
         log.info("Preparing shopping list : {} to save in database", shoppingListDto.name());
-        if (bindingResult.hasErrors() && bindingResult!=null){
-            log.warn("Validation errors : {}", bindingResult);
-            return new ResponseEntity<>("Validation errors : "+bindingResult.getAllErrors(), HttpStatus.BAD_REQUEST);
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         return shoppingListService.addShoppingListAndBindWithUser(shoppingListDto);
     }

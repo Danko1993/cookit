@@ -1,8 +1,10 @@
 package com.example.cookit.controllers;
 
 import com.example.cookit.DTO.MealDto;
+import com.example.cookit.DTO.SendMealDto;
 import com.example.cookit.DTO.UpdateMealDto;
 import com.example.cookit.services.MealService;
+import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,32 +23,31 @@ public class MealController {
 
     @Autowired
     private MealService mealService;
+    @Autowired
+    private ValidationErrorService validationErrorService;
 
     @PostMapping("/create")
-    public ResponseEntity<String> createMeal(@RequestBody @Valid MealDto mealDto, BindingResult results) {
-        if (results.hasErrors() && results !=null) {
-            log.warn("Validation Errors: {}", results.getAllErrors());
-            return new ResponseEntity<>("Validation errors:"+results.getAllErrors(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> createMeal(@RequestBody @Valid MealDto mealDto, BindingResult result) {
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Proceeding to create meal: {}", mealDto.name());
         return mealService.createMeal(mealDto);
     }
 
     @PostMapping("/create_many")
-    public ResponseEntity<String> createMeals(@RequestBody @Valid List<MealDto> mealDtos, BindingResult results) {
-        if (results.hasErrors() && results !=null) {
-            log.warn("Validation Errors: {}", results.getAllErrors());
-            return new ResponseEntity<>("Validation errors:"+results.getAllErrors(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> createMeals(@RequestBody @Valid List<MealDto> mealDtos, BindingResult result) {
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Proceeding to create meals: {}", mealDtos.toString());
         return mealService.createManyMeals(mealDtos);
     }
 
     @PatchMapping("/update")
-    public ResponseEntity<String> updateMeal(@RequestBody @Valid UpdateMealDto updateMealDto, BindingResult results) {
-        if (results.hasErrors() && results !=null) {
-            log.warn("Validation Errors: {}", results.getAllErrors());
-            return new ResponseEntity<>("Validation errors:"+results.getAllErrors(), HttpStatus.BAD_REQUEST);
+    public ResponseEntity<String> updateMeal(@RequestBody @Valid UpdateMealDto updateMealDto, BindingResult result) {
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         log.info("Proceeding to update meal to: {}", updateMealDto.name());
         return mealService.updateMeal(updateMealDto);
@@ -57,13 +58,13 @@ public class MealController {
     }
 
     @GetMapping("/get_all")
-    public ResponseEntity<List<MealDto>> getAllMeals() {
+    public ResponseEntity<List<SendMealDto>> getAllMeals() {
         log.info("Getting all meals");
         return mealService.getAllMeals();
     }
 
     @GetMapping("/get_by_user")
-    public ResponseEntity<List<MealDto>> getMealsByUser(@RequestParam("id") UUID userId) {
+    public ResponseEntity<List<SendMealDto>> getMealsByUser(@RequestParam("id") UUID userId) {
         log.info("Getting all meals by user with id: {}", userId);
         if (userId == null) {
             log.warn("User id must be provided");
@@ -73,7 +74,7 @@ public class MealController {
     }
 
     @GetMapping("/get_by_id")
-    public ResponseEntity<MealDto> getMealById(@RequestParam("id") UUID mealId) {
+    public ResponseEntity<SendMealDto> getMealById(@RequestParam("id") UUID mealId) {
         log.info("Getting meal with id: {}", mealId);
         return mealService.getMealById(mealId);
     }

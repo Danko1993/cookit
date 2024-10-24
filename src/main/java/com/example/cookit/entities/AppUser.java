@@ -1,8 +1,10 @@
 package com.example.cookit.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import java.util.UUID;
 @Entity
 @Data
 @NoArgsConstructor
+@ToString(exclude = {"meals", "shoppingLists"})
 public class AppUser {
 
     @Id
@@ -28,9 +31,11 @@ public class AppUser {
     private boolean enabled;
 
     @OneToMany(mappedBy = "appUser")
+    @JsonManagedReference
     private List<Meal> meals;
 
     @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<ShoppingList> shoppingLists = new ArrayList<>();
 
 }

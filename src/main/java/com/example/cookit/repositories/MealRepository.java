@@ -10,6 +10,5 @@ import java.util.UUID;
 @Repository
 public interface MealRepository extends JpaRepository<Meal, UUID> {
     Meal findMealById(UUID id);
-    Meal findMealByAppUser(AppUser appUser);
     void deleteMealById(UUID id);
 }

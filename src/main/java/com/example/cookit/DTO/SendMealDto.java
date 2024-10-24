@@ -1,21 +1,22 @@
 package com.example.cookit.DTO;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SendMealScheduleDto {
-    private UUID id;
-    private Date date;
-    private List<SendMealDto> meals;
+public class SendMealDto {
+
+    private UUID appUserId;
+    private String name;
+    private String description;
+    private Map<UUID,Double> ingredientsWithWeightDto;
+
     private double calories;
 
     private double carbs;
@@ -23,4 +24,6 @@ public class SendMealScheduleDto {
     private double proteins;
 
     private double fats;
+
+
 }

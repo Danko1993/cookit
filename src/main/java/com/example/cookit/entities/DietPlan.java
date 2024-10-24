@@ -1,5 +1,7 @@
 package com.example.cookit.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,10 +20,12 @@ public class DietPlan {
 
     @ManyToOne
     @JoinColumn(name = "app_user_id", nullable = false)
+    @JsonBackReference
     private AppUser appUser;
 
     private Double dailyCalories;
 
-    @OneToMany(mappedBy = "dietPlan", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<MealSchedule> mealSchedules;
+//    @OneToMany(mappedBy = "dietPlan", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//    @JsonManagedReference
+//    private List<MealSchedule> mealSchedules;
 }

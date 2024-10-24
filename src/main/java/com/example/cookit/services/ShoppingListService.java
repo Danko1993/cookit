@@ -38,6 +38,10 @@ public class ShoppingListService {
         log.info("Checking if user with id {} exists.", shoppingListDto.appUserId());
 
         if (appUserService.userExists(shoppingListDto.appUserId())) {
+            if (!mealScheduleService.checkMealSchedules(shoppingListDto.mealScheduleIds())){
+                log.warn("At least one meal schedule not found in database.");
+                return new ResponseEntity<>("At least one meal schedule not found in database.",HttpStatus.BAD_REQUEST);
+            }
             log.info("User with id {} found.", shoppingListDto.appUserId());
             ShoppingList shoppingList = shoppingListMapper.toEntity(shoppingListDto);
             log.info("Getting meal schedules to prepare shopping list");
@@ -74,6 +78,10 @@ public class ShoppingListService {
     }
 
     public ResponseEntity<List<ReadyShopingListDto>> getReadyShoppingListsByUser(UUID appUserId) {
+        if (!appUserService.userExists(appUserId)) {
+            log.warn("User with id {} not found.", appUserId);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
         List<ShoppingList> shoppingLists = appUserService.getUserById(appUserId).getShoppingLists();
         if (shoppingLists == null || shoppingLists.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

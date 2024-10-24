@@ -1,5 +1,6 @@
 package com.example.cookit.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,7 @@ public class ShoppingList {
 
     @ManyToOne
     @JoinColumn(name = "app_user_id", nullable = false)
+    @JsonBackReference
     private AppUser appUser;
 
     @ElementCollection

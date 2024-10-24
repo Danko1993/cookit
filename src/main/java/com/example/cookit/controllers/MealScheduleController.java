@@ -1,9 +1,11 @@
 package com.example.cookit.controllers;
 
+import com.example.cookit.DTO.DietPlanAppUserDto;
 import com.example.cookit.DTO.MealScheduleDto;
 import com.example.cookit.DTO.SendMealScheduleDto;
 import com.example.cookit.DTO.UpdateMealScheduleDto;
 import com.example.cookit.services.MealScheduleService;
+import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,24 +23,24 @@ import java.util.UUID;
 public class MealScheduleController {
     @Autowired
     private MealScheduleService mealScheduleService;
+    @Autowired
+    private ValidationErrorService validationErrorService;
 
 
     @PostMapping("/add")
-    public ResponseEntity<String> addMealScheduleAndBindWitDietPlan(@RequestBody @Valid MealScheduleDto mealScheduleDto, BindingResult bindingResult) {
+    public ResponseEntity<String> addMealScheduleAndBindWitDietPlan(@RequestBody @Valid MealScheduleDto mealScheduleDto, BindingResult result) {
         log.info("Preparing to add and bind meal schedule");
-        if (bindingResult.hasErrors() && bindingResult!=null ) {
-            log.warn("Validation errors: {}", bindingResult.getAllErrors());
-            return new ResponseEntity<>("Validation errors :"+bindingResult.getAllErrors(), HttpStatus.BAD_REQUEST);
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         return mealScheduleService.addMealScheduleAndBindWithDietPlan(mealScheduleDto);
     }
 
     @PatchMapping("/update")
-    public ResponseEntity<String> updateMealSchedule(@RequestBody @Valid UpdateMealScheduleDto updateMealScheduleDto, BindingResult bindingResult) {
+    public ResponseEntity<String> updateMealSchedule(@RequestBody @Valid UpdateMealScheduleDto updateMealScheduleDto, BindingResult result) {
         log.info("Preparing to update and bind meal schedule");
-        if (bindingResult.hasErrors() && bindingResult!=null ) {
-            log.warn("Validation errors: {}", bindingResult.getAllErrors());
-            return new ResponseEntity<>("Validation errors :"+bindingResult.getAllErrors(), HttpStatus.BAD_REQUEST);
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         return mealScheduleService.updateMealSchedule(updateMealScheduleDto);
     }

@@ -3,6 +3,7 @@ package com.example.cookit.controllers;
 import com.example.cookit.DTO.DietPlanDto;
 import com.example.cookit.DTO.UpdateDietPlanDto;
 import com.example.cookit.services.DietPlanService;
+import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,24 +21,24 @@ import java.util.UUID;
 public class DietPlanController {
     @Autowired
     private DietPlanService dietPlanService;
+    @Autowired
+    private ValidationErrorService validationErrorService;
 
 
 
     @PostMapping("/add")
-    public ResponseEntity<String> addDietPlan(@RequestBody @Valid DietPlanDto dietPlanDto, BindingResult bindingResult) {
+    public ResponseEntity<String> addDietPlan(@RequestBody @Valid DietPlanDto dietPlanDto, BindingResult result) {
         log.info("Preparing diet plan to save in database");
-        if (bindingResult.hasErrors() && bindingResult != null) {
-            log.info("Validation errors: {}", bindingResult.getAllErrors());
-            return new ResponseEntity<>("Validation errors :"+ bindingResult.getAllErrors(), HttpStatus.BAD_REQUEST);
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         return dietPlanService.addDietPlan(dietPlanDto);
     }
     @PatchMapping("/update")
-    public ResponseEntity<String> updateDietPlan(@RequestBody @Valid UpdateDietPlanDto updateDietPlanDto, BindingResult bindingResult) {
+    public ResponseEntity<String> updateDietPlan(@RequestBody @Valid UpdateDietPlanDto updateDietPlanDto, BindingResult result) {
         log.info("Preparing diet plan to update in database");
-        if (bindingResult.hasErrors() && bindingResult != null) {
-            log.info("Validation errors: {}", bindingResult.getAllErrors());
-            return new ResponseEntity<>("Validation errors :"+ bindingResult.getAllErrors(), HttpStatus.BAD_REQUEST);
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
         }
         return dietPlanService.updateDietPlan(updateDietPlanDto);
     }
