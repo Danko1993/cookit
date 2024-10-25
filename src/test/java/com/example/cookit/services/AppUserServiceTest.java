@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
@@ -37,16 +38,11 @@ public class AppUserServiceTest {
     private AppUserRepository appUserRepository;
 
     @Mock
-    private ActivationTokenRepository activationTokenRepository;
-
-    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
     private ActivationTokenService activationTokenService;
 
-    @Mock
-    private  AppUserMapper appUserMapper;
 
     @BeforeEach
     void setUp() {
@@ -115,12 +111,12 @@ public class AppUserServiceTest {
     @Test
     void testActivateAccountSuccess() {
         when(activationTokenService.validateActivationToken(token)).thenReturn(true);
-        when(activationTokenRepository.findActivationTokenByToken(token)).thenReturn(activationToken);
+        when(activationTokenService.getActivationTokenByToken(token)).thenReturn(activationToken);
         when(appUserRepository.save(any(AppUser.class))).thenReturn(appUser);
 
         ResponseEntity<String> response = appUserService.activateAccount(token);
 
-        verify(activationTokenRepository,times(2)).findActivationTokenByToken(token);
+        verify(activationTokenService,times(2)).getActivationTokenByToken(token);
         verify(activationTokenService,times(1)).validateActivationToken(token);
         verify(appUserRepository,times(1)).save(any(AppUser.class));
         assertEquals(HttpStatus.OK,response.getStatusCode());
@@ -137,6 +133,18 @@ public class AppUserServiceTest {
         verify(activationTokenService,times(1)).validateActivationToken(token);
         assertEquals(HttpStatus.CONFLICT,response.getStatusCode());
         assertEquals("Invalid activation token",response.getBody());
+    }
+    @Test
+    void testActivateAccountAccountActive(){
+        appUser.setEnabled(true);
+        when(activationTokenService.validateActivationToken(token)).thenReturn(true);
+        when(activationTokenService.getActivationTokenByToken(token)).thenReturn(activationToken);
+        ResponseEntity<String> response = appUserService.activateAccount(token);
+
+        verify(activationTokenService,times(1)).validateActivationToken(token);
+        verify(activationTokenService,times(1)).getActivationTokenByToken(token);
+        assertEquals(HttpStatus.CONFLICT,response.getStatusCode());
+        assertEquals("Account is already active",response.getBody());
     }
 
     @Test
@@ -165,5 +173,67 @@ public class AppUserServiceTest {
         assertEquals(HttpStatus.NOT_FOUND,response.getStatusCode());
         assertEquals("Email: "+email+" not found",response.getBody());
     }
+    @Test
+    void testUserExistSuccess(){
+        UUID uuid = UUID.randomUUID();
+        appUser.setId(uuid);
+        when(appUserRepository.existsById(uuid)).thenReturn(true);
 
+        boolean exists = appUserService.userExists(uuid);
+
+        verify(appUserRepository,times(1)).existsById(uuid);
+        assertEquals(exists,true);
+
+    }
+    @Test
+    void testUserExistFailure(){
+        UUID uuid = UUID.randomUUID();
+        appUser.setId(uuid);
+        when(appUserRepository.existsById(uuid)).thenReturn(false);
+
+        boolean exists = appUserService.userExists(uuid);
+
+        verify(appUserRepository,times(1)).existsById(uuid);
+        assertEquals(exists,false);
+    }
+    @Test
+    void testUserExistIdNull(){
+        UUID uuid = null;
+        appUser.setId(uuid);
+        when(appUserRepository.existsById(uuid)).thenThrow(new IllegalArgumentException("Id can must be provided."));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,()->appUserService.userExists(uuid));
+        assertEquals(exception.getMessage(),"Id can must be provided.");
+
+    }
+    @Test
+    void testGetUserByIdSuccess(){
+        UUID uuid = UUID.randomUUID();
+        appUser.setId(uuid);
+        when(appUserRepository.findById(uuid)).thenReturn(Optional.of(appUser));
+
+        AppUser result = appUserService.getUserById(uuid);
+        verify(appUserRepository,times(1)).findById(uuid);
+        assertNotNull(result);
+        assertEquals(result,appUser);
+
+    }
+
+    @Test
+    void testGetUserByIdFailure(){
+        UUID uuid = UUID.randomUUID();
+        appUser.setId(uuid);
+        when(appUserRepository.findById(uuid)).thenReturn(Optional.empty());
+        AppUser result = appUserService.getUserById(uuid);
+        verify(appUserRepository,times(1)).findById(uuid);
+        assertNull(result);
+    }
+
+    @Test
+    void testGetUserByIdNull (){
+        UUID uuid = null;
+        appUser.setId(uuid);
+        when(appUserRepository.findById(uuid)).thenThrow(new IllegalArgumentException("Id can must be provided."));
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,()->appUserService.getUserById(uuid));
+        assertEquals(exception.getMessage(),"Id can must be provided.");
+    }
 }

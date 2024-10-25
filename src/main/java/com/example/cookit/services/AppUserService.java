@@ -84,12 +84,22 @@ public class AppUserService {
         }
     }
 
-    public boolean userExists(UUID id) {
-        return appUserRepository.existsById(id);
+    public boolean userExists(UUID id) throws IllegalArgumentException {
+        try {
+            return appUserRepository.existsById(id);
+        }catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException("Id can must be provided.");
+        }
     }
 
-    public AppUser getUserById(UUID id) {
-        return appUserRepository.findById(id).orElse(null);
+    public AppUser getUserById(UUID id) throws IllegalArgumentException {
+        try {
+            return appUserRepository.findById(id).orElse(null);
+        }catch (Exception e) {
+            log.error(e.getMessage());
+            throw new IllegalArgumentException("Id can must be provided.");
+        }
     }
 
 

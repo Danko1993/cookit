@@ -20,7 +20,7 @@ import java.util.Date;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-public class ActivationTokenTest {
+public class ActivationTokenServiceTest {
 
     @InjectMocks
     private ActivationTokenService activationTokenService;
@@ -37,7 +37,7 @@ public class ActivationTokenTest {
     }
 
     @Test
-    void testSendActivationToken_Success() throws MessagingException {
+    void testSendActivationTokenSuccess() throws MessagingException {
         AppUser appUser = new AppUser();
         appUser.setEmail("test@test.com");
         appUser.setUsername("test");
@@ -55,7 +55,7 @@ public class ActivationTokenTest {
     }
 
     @Test
-    void testSendActivationToken_Failure() throws MessagingException {
+    void testSendActivationTokenFailure() throws MessagingException {
         AppUser appUser = new AppUser();
         appUser.setEmail("test@test.com");
         appUser.setUsername("test");
@@ -140,7 +140,7 @@ public class ActivationTokenTest {
     void testDeleteActivationToken() {
         AppUser appUser = new AppUser();
 
-        activationTokenRepository.deleteActivationTokenByAppUser(appUser);
+        activationTokenService.deleteActivationToken(appUser);
 
         verify(activationTokenRepository,times(1)).deleteActivationTokenByAppUser(appUser);
     }
