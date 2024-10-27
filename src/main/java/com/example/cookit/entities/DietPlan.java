@@ -25,7 +25,4 @@ public class DietPlan {
 
     private Double dailyCalories;
 
-//    @OneToMany(mappedBy = "dietPlan", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-//    @JsonManagedReference
-//    private List<MealSchedule> mealSchedules;
 }

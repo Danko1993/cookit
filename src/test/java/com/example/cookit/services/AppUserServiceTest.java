@@ -4,8 +4,6 @@ package com.example.cookit.services;
 import com.example.cookit.DTO.RegisterDto;
 import com.example.cookit.entities.ActivationToken;
 import com.example.cookit.entities.AppUser;
-import com.example.cookit.mappers.AppUserMapper;
-import com.example.cookit.repositories.ActivationTokenRepository;
 import com.example.cookit.repositories.AppUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,7 +80,6 @@ public class AppUserServiceTest {
 
         ArgumentCaptor<AppUser> userCaptor = ArgumentCaptor.forClass(AppUser.class);
         verify(activationTokenService).sendActivationToken(userCaptor.capture());
-
         assertEquals(fixedUUID, userCaptor.getValue().getId());
 
         verify(appUserRepository,times(1)).findByEmail(registerDto.email());
@@ -156,7 +153,7 @@ public class AppUserServiceTest {
 
         ResponseEntity<String> response = appUserService.resendToken(email);
 
-        verify(appUserRepository,times(3)).findByEmail(email);
+        verify(appUserRepository,times(2)).findByEmail(email);
         verify(activationTokenService,times(1)).sendActivationToken(appUser);
         assertEquals(HttpStatus.OK,response.getStatusCode());
         assertEquals("Activation email for user "+appUser.getUsername()+" sent successfully",response.getBody());

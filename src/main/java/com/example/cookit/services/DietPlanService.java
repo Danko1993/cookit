@@ -94,8 +94,4 @@ public class DietPlanService {
         log.info("Checking if diet plan with id {} exists", id);
         return dietPlanRepository.existsById(id);
     }
-    @Transactional
-    public DietPlan getById(UUID id) {
-        return dietPlanRepository.getDietPlanById(id);
-    }
 }
