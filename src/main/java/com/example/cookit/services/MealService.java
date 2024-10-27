@@ -6,6 +6,7 @@ import com.example.cookit.DTO.UpdateMealDto;
 import com.example.cookit.entities.AppUser;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.entities.Meal;
+import com.example.cookit.events.EventPublisher;
 import com.example.cookit.events.IngredientUpdatedEvent;
 import com.example.cookit.events.MealUpdatedEvent;
 import com.example.cookit.mappers.MealMapper;
@@ -28,35 +29,24 @@ import java.util.stream.Collectors;
 @Service
 public class MealService {
     @Autowired
-    private AppUserRepository appUserRepository;
-
-    @Autowired
     private MealRepository mealRepository;
-
-
     private final MealMapper mealMapper = MealMapper.INSTANCE;
     @Autowired
     private IngredientService ingredientService;
     @Autowired
     private AppUserService appUserService;
-
-    private final ApplicationEventPublisher eventPublisher;
-
-    public MealService(ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
+    @Autowired
+    private EventPublisher eventPublisher;
 
     @Transactional
     public ResponseEntity<String> createMeal(MealDto mealDto) {
         log.info("Adding meal {} to database", mealDto.name());
         Meal meal = mealMapper.toEntity(mealDto);
-        AppUser appUser = appUserService.getUserById(mealDto.appUserId());
-        if (appUser == null) {
+        if (!appUserService.userExists(mealDto.appUserId())) {
             log.warn("Meal {} author not found", mealDto.name());
             return new ResponseEntity<>("User with id:" + mealDto.appUserId() + "not found.", HttpStatus.NOT_FOUND);
         }
-        log.info("Meal {} author set to {}.", mealDto.name(), appUser.getUsername());
-        meal.setAppUser(appUser);
+        log.info("Meal {} author set to user with id: {}.", mealDto.name(), mealDto.appUserId());
         log.info("Preparing ingredients list");
         boolean ingredientsExist = ingredientService.ingredientsExist(mealDto.ingredientsWithWeightDto().keySet()
         .stream().collect(Collectors.toList()));
@@ -106,7 +96,7 @@ public class MealService {
             meal.setIngredientsWithWeight(ingredientsWithWeight);
             this.setMealNutrition(ingredientsWithWeight,meal);
             log.info("Updated meal {} ingredients list", updateMealDto.name());
-            eventPublisher.publishEvent(new MealUpdatedEvent(this,meal));
+            eventPublisher.publishMealUpdatedEvent(meal);
             mealRepository.save(meal);
             log.info("Meal {} updated successfully.", updateMealDto.name());
             return new ResponseEntity<>("Meal" + updateMealDto.name() +
@@ -141,12 +131,16 @@ public class MealService {
     public ResponseEntity<List<SendMealDto>> getMealsByUser(UUID userId) {
         log.info("Checking if user with id {} exists", userId);
         List<SendMealDto> mealDtos = new ArrayList<>();
-        if (appUserRepository.findAppUserById(userId) != null) {
-            List<Meal> mealsByUser = appUserRepository.findAppUserById(userId).getMeals();
+        if (appUserService.userExists(userId)) {
+            List<Meal> mealsByUser = new ArrayList<>();
+            List<Meal> allMeals = mealRepository.findAll();
+            for (Meal meal : allMeals) {
+                mealsByUser.add(meal);
+            }
             for (Meal meal : mealsByUser) {
                 mealDtos.add(mealMapper.toSendMealDto(meal));
             }
-            log.info("Meals from user {} found", appUserRepository.findAppUserById(userId).getUsername());
+            log.info("Meals from user {} found", appUserService.getUserById(userId).getUsername());
             return new ResponseEntity<>(mealDtos, HttpStatus.OK);
         }
         log.warn("User with id {} not found", userId);
@@ -168,18 +162,6 @@ public class MealService {
         return mealRepository.findMealById(mealId);
     }
 
-    public List<SendMealDto> mapMealsToDto(List<Meal> meals) {
-        List<SendMealDto> mealDtos = new ArrayList<>();
-        for (Meal meal : meals) {
-            this.mapMealToDto(meal);
-        }
-        return mealDtos;
-    }
-
-    public SendMealDto mapMealToDto(Meal meal) {
-        SendMealDto mealDto = mealMapper.toSendMealDto(meal);
-        return mealDto;
-    }
 
     public List<Meal> getMealsById(List<UUID> mealIds) {
         List<Meal> meals = new ArrayList<>();
@@ -220,6 +202,7 @@ public class MealService {
         for (Meal meal : allMeals) {
             this.setMealNutrition(meal.getIngredientsWithWeight(),meal);
         }
+        eventPublisher.publishMealUpdatedEvent(allMeals.get(0));
     }
 
     public Map<Ingredient, Double> mapIngredientsWithWeightByIngredientId(Map<UUID, Double> ingredientsWithWeight) {
@@ -229,7 +212,6 @@ public class MealService {
             Double weight = entry.getValue();
             Ingredient ingredient = ingredientService.getById(ingredientId);
             ingredients.put(ingredient, weight);
-            log.info("Ingredient {} added to meal", ingredient.getName());
         }
         return ingredients;
     }

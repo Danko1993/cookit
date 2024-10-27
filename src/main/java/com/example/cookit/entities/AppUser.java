@@ -30,10 +30,6 @@ public class AppUser {
 
     private boolean enabled;
 
-    @OneToMany(mappedBy = "appUser")
-    @JsonManagedReference
-    private List<Meal> meals;
-
     @OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<ShoppingList> shoppingLists = new ArrayList<>();

@@ -61,7 +61,6 @@ public class AppUserServiceTest {
         activationToken.setAppUser(appUser);
 
     }
-
     @Test
     void testRegisterUserSuccess () {
         UUID fixedUUID = UUID.randomUUID();
@@ -89,7 +88,6 @@ public class AppUserServiceTest {
         assertEquals(HttpStatus.OK,response.getStatusCode());
         assertEquals("Activation email for user "+appUser.getUsername()+" sent successfully",response.getBody());
     }
-
     @Test
     void testRegisterUserFailureEmailExists() {
         UUID fixedUUID = UUID.randomUUID();
@@ -104,7 +102,6 @@ public class AppUserServiceTest {
                 +registerDto.email()+" is already taken",response.getBody());
 
     }
-
     @Test
     void testActivateAccountSuccess() {
         when(activationTokenService.validateActivationToken(token)).thenReturn(true);
@@ -120,7 +117,6 @@ public class AppUserServiceTest {
         assertEquals("Activation successful",response.getBody());
 
     }
-
     @Test
     void testActivateAccountFailureInvalidToken() {
         when(activationTokenService.validateActivationToken(token)).thenReturn(false);
@@ -143,7 +139,6 @@ public class AppUserServiceTest {
         assertEquals(HttpStatus.CONFLICT,response.getStatusCode());
         assertEquals("Account is already active",response.getBody());
     }
-
     @Test
     void testResendTokenSuccess(){
         String email = "testEmail";
@@ -158,7 +153,6 @@ public class AppUserServiceTest {
         assertEquals(HttpStatus.OK,response.getStatusCode());
         assertEquals("Activation email for user "+appUser.getUsername()+" sent successfully",response.getBody());
     }
-
     @Test
     void testResendTokenFailureEmailDoesNotExist() {
         String email = "nonExistEmail";
@@ -214,7 +208,6 @@ public class AppUserServiceTest {
         assertEquals(result,appUser);
 
     }
-
     @Test
     void testGetUserByIdFailure(){
         UUID uuid = UUID.randomUUID();
@@ -224,7 +217,6 @@ public class AppUserServiceTest {
         verify(appUserRepository,times(1)).findById(uuid);
         assertNull(result);
     }
-
     @Test
     void testGetUserByIdNull (){
         UUID uuid = null;

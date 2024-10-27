@@ -3,6 +3,7 @@ package com.example.cookit.services;
 import com.example.cookit.DTO.IngredientDto;
 import com.example.cookit.DTO.UpdateIngredientDto;
 import com.example.cookit.entities.Ingredient;
+import com.example.cookit.events.EventPublisher;
 import com.example.cookit.events.IngredientUpdatedEvent;
 import com.example.cookit.mappers.IngredientMapper;
 import com.example.cookit.repositories.IngredientRepository;
@@ -22,20 +23,17 @@ import java.util.UUID;
 public class IngredientService {
     @Autowired
     private IngredientRepository ingredientRepository;
+    @Autowired
+    private EventPublisher eventPublisher;
 
     private final IngredientMapper ingredientMapper = IngredientMapper.INSTANCE;
-    private final ApplicationEventPublisher eventPublisher;
-
-    public IngredientService( ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
 
     @Transactional
     public ResponseEntity<String> addIngredient(IngredientDto ingredientDto) {
         log.info("Adding ingredient " + ingredientDto.name() + " to the database");
         ingredientRepository.save(ingredientMapper.toEntity(ingredientDto));
         log.info("Ingredient " + ingredientDto.name() + " added to the database");
-        return new ResponseEntity<>("Ingredient " + ingredientDto.name() + " added to the database",HttpStatus.OK);
+        return new ResponseEntity<>("Ingredient " + ingredientDto.name() + " added to the database",HttpStatus.CREATED);
     }
     @Transactional
     public ResponseEntity<String> addIngredients(List<IngredientDto> ingredientDtos) {
@@ -45,33 +43,33 @@ public class IngredientService {
             log.info("Ingredient " + ingredientDto.name() + " added to the database");
         }
         log.info("Ingredients added to the database");
-        return new ResponseEntity<>("Ingredients " + ingredientDtos.toString() + " ingredients to the database",HttpStatus.OK);
+        return new ResponseEntity<>("Ingredients " + ingredientDtos.toString() + " added to the database",HttpStatus.CREATED);
     }
     @Transactional
     public ResponseEntity<String> deleteIngredient(UUID id) {
-        if (ingredientRepository.findById(id).isPresent()) {
+        if (ingredientRepository.existsById(id)) {
             log.info("Deleting ingredient with id :" + id + " from the database");
             ingredientRepository.deleteIngredientById(id);
             log.info("Ingredient with id :" + id + " deleted from the database");
             return new  ResponseEntity<>("Ingredient with id :" + id + " deleted from the database", HttpStatus.OK);
         }
         log.warn("Ingredient " + id + " not found");
-        return new ResponseEntity<>("Ingredient " + id + " not found",HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>("Ingredient with id: " + id + " not found",HttpStatus.NOT_FOUND);
 
     }
     @Transactional
     public ResponseEntity<String> updateIngredient(UpdateIngredientDto updateIngredientDto) {
-        if (ingredientRepository.findById(updateIngredientDto.id()).isPresent()) {
+        if (ingredientRepository.existsById(updateIngredientDto.id())) {
             log.info("Updating ingredient " + updateIngredientDto.name() + " to the database");
             Ingredient existingIngredient = ingredientRepository.findIngredientById(updateIngredientDto.id());
             ingredientMapper.updateIngredient(updateIngredientDto, existingIngredient);
             ingredientRepository.save(existingIngredient);
-            eventPublisher.publishEvent(new IngredientUpdatedEvent(this, existingIngredient));
+            eventPublisher.publishIngredientUpdated(existingIngredient);
             log.info("Ingredient with name " + updateIngredientDto.name() + " updated");
             return new ResponseEntity<>("Ingredient " + updateIngredientDto.name() + " updated", HttpStatus.OK);
         }
             log.warn("Ingredient with name " + updateIngredientDto.name() + " not found");
-            return new ResponseEntity<>("Ingredient with name " + updateIngredientDto.name() + " not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Ingredient " + updateIngredientDto.name() + " not found", HttpStatus.NOT_FOUND);
 
     }
 
@@ -84,7 +82,7 @@ public class IngredientService {
         Ingredient ingredient = ingredientRepository.findIngredientById(id);
         if (ingredient == null) {
             log.warn("Ingredient " + id + " not found");
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(ingredient,HttpStatus.NOT_FOUND);
         }else {
             log.info("Ingredient " + id + " found");
             return new ResponseEntity<>(ingredient,HttpStatus.OK);

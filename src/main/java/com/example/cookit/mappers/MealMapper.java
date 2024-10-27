@@ -15,11 +15,10 @@ import java.util.UUID;
 @Mapper
 public interface MealMapper {
     MealMapper INSTANCE = Mappers.getMapper(MealMapper.class);
-    @Mapping(target = "appUser", ignore = true)
+
     @Mapping(target = "ingredientsWithWeight", ignore = true)
     Meal toEntity(MealDto mealDto);
 
-    @Mapping(source = "appUser.id",target = "appUserId")
     @Mapping(target = "ingredientsWithWeightDto", source = "ingredientsWithWeight")
     SendMealDto toSendMealDto(Meal meal);
 

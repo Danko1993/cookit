@@ -34,7 +34,7 @@ public class MealScheduleService {
     @Autowired
     private MealService mealService;
 
-    private final MealMapper   mealMapper = MealMapper.INSTANCE;
+    private final MealMapper mealMapper = MealMapper.INSTANCE;
 
 
     @Transactional
@@ -65,7 +65,7 @@ public class MealScheduleService {
     @Transactional
     public ResponseEntity<String> updateMealSchedule(UpdateMealScheduleDto updateMealScheduleDto) {
         log.info("Checking if meal schedule with id {} exist", updateMealScheduleDto.mealScheduleId());
-        if (mealScheduleRepository.findById(updateMealScheduleDto.mealScheduleId()).isPresent()) {
+        if (mealScheduleRepository.existsById(updateMealScheduleDto.mealScheduleId())) {
             log.info("Meal schedule with id {} found.", updateMealScheduleDto.mealScheduleId());
             MealSchedule existingMealSchedule = mealScheduleRepository.findById(updateMealScheduleDto.mealScheduleId()).get();
             existingMealSchedule.setDate(updateMealScheduleDto.date());
@@ -85,7 +85,6 @@ public class MealScheduleService {
     }
 
     public ResponseEntity<List<SendMealScheduleDto>> getMealSchedulesByDietPlanId(UUID id) {
-            DietPlan dietPlan = null;
             List<MealSchedule> mealSchedules = mealScheduleRepository.findAll();
             log.info("Meal schedules {}", mealSchedules);
             List<SendMealScheduleDto> result = new ArrayList<>();
@@ -123,7 +122,7 @@ public class MealScheduleService {
 
     public boolean checkMealSchedule(UUID mealScheduleId) {
         log.info("Checking if meal schedule with id {} exists.", mealScheduleId);
-        return mealScheduleRepository.findById(mealScheduleId).isPresent();
+        return mealScheduleRepository.existsById(mealScheduleId);
     }
 
     public double countCarbs (List<Meal> meals) {
@@ -161,10 +160,10 @@ public class MealScheduleService {
             double proteins = meal.getProteins();
             double fats = meal.getFats();
             double carbs = meal.getCarbs();
-            mealSchedule.setCalories(calories);
-            mealSchedule.setProteins(proteins);
-            mealSchedule.setFats(fats);
-            mealSchedule.setCarbs(carbs);
+            mealSchedule.setCalories(countCalories(meals));
+            mealSchedule.setProteins(countProteins(meals));
+            mealSchedule.setFats(countFats(meals));
+            mealSchedule.setCarbs(countCarbs(meals));
         });
     }
 

@@ -16,10 +16,8 @@ import java.util.UUID;
 public class Meal {
     @Id
     private UUID id = UUID.randomUUID();
-    @ManyToOne
-    @JoinColumn(name = "app_user_id", nullable = false)
-    @JsonBackReference
-    private AppUser appUser;
+
+    private UUID appUserId;
 
     private String name;
 
