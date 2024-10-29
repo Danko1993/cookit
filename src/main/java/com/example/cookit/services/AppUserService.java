@@ -92,7 +92,7 @@ public class AppUserService {
                     path = fileStorageService.saveFile(file,"appuser");
                     appUser.setImagePath(path);
                     appUserRepository.save(appUser);
-                    return new ResponseEntity<>("Image saved successfully", HttpStatus.CREATED);
+                    return new ResponseEntity<>("Image saved successfully", HttpStatus.OK);
                 }catch (IOException e){
                     return new ResponseEntity<>("Image not found", HttpStatus.NOT_FOUND);
                 }

@@ -101,14 +101,6 @@ public class MealScheduleService {
             log.info("Meal schedule with id {} found.", updateMealScheduleDto.mealScheduleId());
             MealSchedule existingMealSchedule = mealScheduleRepository.findById(updateMealScheduleDto.mealScheduleId()).get();
             existingMealSchedule.setDate(updateMealScheduleDto.date());
-            boolean checkMeals = mealService.checkMealsById(updateMealScheduleDto.mealIds());
-            if (!checkMeals) {
-                log.warn("At least one meal not found in database.");
-                return new ResponseEntity<>("At least one meal not found in database.", HttpStatus.NOT_FOUND);
-            }
-            List<Meal> meals = mealService.getMealsById(updateMealScheduleDto.mealIds());
-            this.setNutrition(existingMealSchedule, meals);
-            existingMealSchedule.setMeals(meals);
             log.info("Meal schedule updated successfully.");
             mealScheduleRepository.save(existingMealSchedule);
             return new ResponseEntity<>("Meal schedule updated successfully.", HttpStatus.OK);
