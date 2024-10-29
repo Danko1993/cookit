@@ -12,7 +12,5 @@ public record UpdateMealScheduleDto(
         UUID  mealScheduleId,
         Date date,
         List<UUID> mealIds
-
-
 ) {
 }

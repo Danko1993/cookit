@@ -1,5 +1,6 @@
 package com.example.cookit.services;
 
+import com.example.cookit.DTO.MealScheduleDto;
 import com.example.cookit.DTO.ReadyShopingListDto;
 import com.example.cookit.DTO.ShoppingListDto;
 import com.example.cookit.entities.Meal;
@@ -36,19 +37,10 @@ public class ShoppingListService {
     @Transactional
     public ResponseEntity<String> addShoppingListAndBindWithUser(ShoppingListDto shoppingListDto) {
         log.info("Checking if user with id {} exists.", shoppingListDto.appUserId());
-
         if (appUserService.userExists(shoppingListDto.appUserId())) {
-            if (!mealScheduleService.checkMealSchedules(shoppingListDto.mealScheduleIds())){
-                log.warn("At least one meal schedule not found in database.");
-                return new ResponseEntity<>("At least one meal schedule not found in database.",HttpStatus.BAD_REQUEST);
-            }
             log.info("User with id {} found.", shoppingListDto.appUserId());
             ShoppingList shoppingList = shoppingListMapper.toEntity(shoppingListDto);
             log.info("Getting meal schedules to prepare shopping list");
-            Map<String, Double> readyList = this.prepareShoppingList(shoppingListDto.mealScheduleIds());
-            if (readyList != null && !readyList.isEmpty()) {
-                shoppingList.setIngredientsWithWeight(readyList);
-            }
             shoppingList.setBought(false);
             shoppingListRepository.save(shoppingList);
             log.info("Added shoppingList to database.");
@@ -56,6 +48,20 @@ public class ShoppingListService {
         }
         log.warn("User with id {} not found.", shoppingListDto.appUserId());
         return new ResponseEntity<>("User with id : " + shoppingListDto.appUserId() + " not found.", HttpStatus.NOT_FOUND);
+    }
+    @Transactional
+    public ResponseEntity<String> addIngredientsFromMealSchedules(List<UUID> mealSchedulesId, UUID shoppingListId) {
+        log.info("Checking if meal schedules exists.");
+        if (mealScheduleService.checkMealSchedules(mealSchedulesId)){
+            if (shoppingListRepository.existsById(shoppingListId)){
+                ShoppingList shoppingList = shoppingListRepository.getById(shoppingListId);
+                shoppingList.setIngredientsWithWeight(this.prepareShoppingList(mealSchedulesId));
+                shoppingListRepository.save(shoppingList);
+                return new ResponseEntity<>("Ingreidents form meal schedules added to shopping list.", HttpStatus.OK);
+            }
+            return new ResponseEntity<>("Shopping list not found.", HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>("Meal schedules not found.", HttpStatus.NOT_FOUND);
     }
 
     public Map<String, Double> prepareShoppingList(List<UUID> scheduleIds) {

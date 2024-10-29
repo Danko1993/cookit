@@ -15,8 +15,6 @@ public record MealDto(
         String name,
         @NotBlank(message = "Meal needs a description.")
         @Size(min = 50, message = "Description needs to be at least 50 characters long")
-        String description,
-        @NotNull(message = "Meal needs an ingredients.")
-        Map<UUID,Double> ingredientsWithWeightDto
+        String description
 ) {
 }

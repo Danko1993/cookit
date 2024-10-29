@@ -1,6 +1,7 @@
 package com.example.cookit.services;
 
 import com.example.cookit.DTO.MealDto;
+import com.example.cookit.DTO.MealIngredientDto;
 import com.example.cookit.DTO.SendMealDto;
 import com.example.cookit.DTO.UpdateMealDto;
 import com.example.cookit.entities.AppUser;
@@ -20,7 +21,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,26 +40,19 @@ public class MealService {
     private AppUserService appUserService;
     @Autowired
     private EventPublisher eventPublisher;
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Transactional
     public ResponseEntity<String> createMeal(MealDto mealDto) {
         log.info("Adding meal {} to database", mealDto.name());
-        Meal meal = mealMapper.toEntity(mealDto);
+        log.info("Checking if user with id: {} exist",mealDto.appUserId() );
         if (!appUserService.userExists(mealDto.appUserId())) {
             log.warn("Meal {} author not found", mealDto.name());
             return new ResponseEntity<>("User with id:" + mealDto.appUserId() + "not found.", HttpStatus.NOT_FOUND);
         }
         log.info("Meal {} author set to user with id: {}.", mealDto.name(), mealDto.appUserId());
-        log.info("Preparing ingredients list");
-        boolean ingredientsExist = ingredientService.ingredientsExist(mealDto.ingredientsWithWeightDto().keySet()
-        .stream().collect(Collectors.toList()));
-        if (!ingredientsExist) {
-            log.warn("At least one ingredient not found");
-            return new ResponseEntity<>("At least one ingredient not found in data base.", HttpStatus.NOT_FOUND);
-        }
-        Map<Ingredient, Double> ingredientsWithWeight = this.mapIngredientsWithWeightByIngredientId(mealDto.ingredientsWithWeightDto());
-        meal.setIngredientsWithWeight(ingredientsWithWeight);
-        this.setMealNutrition(ingredientsWithWeight, meal);
+        Meal meal = mealMapper.toEntity(mealDto);
         mealRepository.save(meal);
         log.info("Meal {} added to database", mealDto.name());
         return new ResponseEntity<>("Meal :"
@@ -64,47 +60,100 @@ public class MealService {
     }
 
     @Transactional
-    public ResponseEntity<String> createManyMeals(List<MealDto> mealDtoList) {
-        log.info("Adding meals to database");
-        for (MealDto mealDto : mealDtoList) {
-            this.createMeal(mealDto);
-            log.info("Meal {} added to database", mealDto.name());
+    public ResponseEntity<String> addOrUpdateMealIngredient(MealIngredientDto mealIngredientDto, UUID mealId) {
+        log.info("Checking if meal with id : {} exist", mealId);
+        if (!mealRepository.existsById(mealId)) {
+            log.warn("Meal with id {} does not exist", mealId);
+            return new ResponseEntity<>("Meal with id " + mealId + " does not exist.", HttpStatus.NOT_FOUND);
         }
-        log.info("Meals added to database");
-        return new ResponseEntity<>("Meals added to database.", HttpStatus.CREATED);
+        log.info("Checking if ingredient with id : {} exist", mealIngredientDto.id());
+        if(!ingredientService.ingredientExist(mealIngredientDto.id())){
+            log.warn("Ingredient with id {} does not exist", mealIngredientDto.id().toString());
+            return new ResponseEntity<>("Ingredient with id " + mealIngredientDto.id() + " does not exist.", HttpStatus.NOT_FOUND);
+        }
+        Meal meal = mealRepository.findById(mealId).get();
+        Ingredient ingredient = ingredientService.getById(mealIngredientDto.id());
+        log.info("Adding ingredient {} to meal {}", ingredient.getName(), meal.getName());
+        Map<Ingredient,Double> mealIngredients = meal.getIngredientsWithWeight();
+        mealIngredients.put(ingredient, mealIngredientDto.amount());
+        this.setMealNutrition(meal.getIngredientsWithWeight(),meal);
+        mealRepository.save(meal);
+        eventPublisher.publishMealUpdatedEvent(meal);
+        return new ResponseEntity<String>("Added ingredient "+ingredient.getName()+" to meal "+meal.getName(), HttpStatus.CREATED);
     }
 
     @Transactional
-    public ResponseEntity<String> updateMeal(UpdateMealDto updateMealDto) {
-        log.info("Updating meal {} to database", updateMealDto.name());
-        if (mealRepository.findMealById(updateMealDto.mealId())!=null) {
-            Meal meal = mealRepository.findMealById(updateMealDto.mealId());
-            if (updateMealDto.name() != meal.getName()) {
-                meal.setName(updateMealDto.name());
-                log.info("Changed meal name form {} to {}.}", meal.getName(), updateMealDto.name());
+    public ResponseEntity<String> deleteMealIngredient(UUID ingredientId, UUID mealId) {
+        log.info("Checking if meal with id : {} exist", mealId);
+        if (!mealRepository.existsById(mealId)) {
+            log.warn("Meal with id {} does not exist", mealId);
+        }
+        Meal meal = mealRepository.findById(mealId).get();
+        log.info("Removing ingredient {} from meal {}", ingredientId, meal.getName());
+        if (!ingredientService.ingredientExist(ingredientId)) {
+            log.warn("Ingredient with id {} does not exist", ingredientId);
+            return new ResponseEntity<>("Ingredient with id " + ingredientId + " does not exist.", HttpStatus.NOT_FOUND);
+        }
+        Map<Ingredient,Double> mealIngredients = meal.getIngredientsWithWeight();
+        mealIngredients.remove(ingredientId);
+        meal.setIngredientsWithWeight(mealIngredients);
+        this.setMealNutrition(meal.getIngredientsWithWeight(),meal);
+        mealRepository.save(meal);
+        eventPublisher.publishMealUpdatedEvent(meal);
+        return new ResponseEntity<>("Ingredient "+ ingredientService.getById(ingredientId).getName()+" removed from meal "+meal.getName(), HttpStatus.OK);
+    }
+
+    @Transactional
+    public ResponseEntity<String> addOrUpdatePhoto(String id, MultipartFile file) {
+        log.info("Checking if meal with id : {} exist", id);
+        UUID mealId = UUID.fromString(id);
+        if (!mealRepository.existsById(mealId)) {
+            log.warn("Meal with id {} does not exist", mealId);
+            return new ResponseEntity<>("Meal with id " + mealId + " does not exist.", HttpStatus.NOT_FOUND);
+        }
+        Meal meal = mealRepository.findById(mealId).get();
+        String path;
+
+            if (!meal.getImagePath().isEmpty()) {
+                try {
+                    fileStorageService.deleteFile(meal.getImagePath());
+                } catch (IOException e) {
+                    return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+                }
+                meal.setImagePath("");
             }
-            if (updateMealDto.description() != meal.getDescription()) {
-                meal.setDescription(updateMealDto.description());
-                log.info("Changed meal description form {} to {}.}", meal.getDescription(), updateMealDto.description());
+            try {
+                path= fileStorageService.saveFile(file,"meal");
             }
-            Map<Ingredient, Double> ingredientsWithWeight = meal.getIngredientsWithWeight();
-            if (!updateMealDto.ingredientsWithWeightDto().isEmpty()) {
-                ingredientsWithWeight.clear();
-                Map<Ingredient,Double> newIngredientsWithWeight = this.mapIngredientsWithWeightByIngredientId(updateMealDto.ingredientsWithWeightDto());
-                ingredientsWithWeight.putAll(newIngredientsWithWeight);
+            catch (IOException e) {
+                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
             }
-            meal.setIngredientsWithWeight(ingredientsWithWeight);
-            this.setMealNutrition(ingredientsWithWeight,meal);
-            log.info("Updated meal {} ingredients list", updateMealDto.name());
-            eventPublisher.publishMealUpdatedEvent(meal);
+            meal.setImagePath(path);
             mealRepository.save(meal);
-            log.info("Meal {} updated successfully.", updateMealDto.name());
-            return new ResponseEntity<>("Meal" + updateMealDto.name() +
+            return new ResponseEntity<>("Photo saved", HttpStatus.CREATED);
+    }
+
+    @Transactional
+    public ResponseEntity<String> updateMeal(MealDto mealDto, UUID mealId) {
+        log.info("Updating meal {} to database", mealDto.name());
+        log.info("Checking if meal with id : {} exist", mealId);
+        if (mealRepository.existsById(mealId)) {
+            Meal meal = mealRepository.findMealById(mealId);
+            if (mealDto.name() != meal.getName()) {
+                meal.setName(mealDto.name());
+                log.info("Changed meal name form {} to {}.}", meal.getName(), mealDto.name());
+            }
+            if (mealDto.description() != meal.getDescription()) {
+                meal.setDescription(mealDto.description());
+                log.info("Changed meal description form {} to {}.}", meal.getDescription(), mealDto.description());
+            }
+            mealRepository.save(meal);
+            log.info("Meal {} updated successfully.", mealDto.name());
+            return new ResponseEntity<>("Meal" + mealDto.name() +
                     "updated successfully", HttpStatus.OK);
         }
-
-       log.warn("Meal with id {} not found.",updateMealDto.mealId());
-        return new ResponseEntity<>("Meal with id " + updateMealDto.mealId()+" not found.", HttpStatus.NOT_FOUND);
+       log.warn("Meal with id {} not found.", mealId);
+        return new ResponseEntity<>("Meal with id " + mealId+" not found.", HttpStatus.NOT_FOUND);
     }
 
     @Transactional
@@ -162,7 +211,6 @@ public class MealService {
         return mealRepository.findMealById(mealId);
     }
 
-
     public List<Meal> getMealsById(List<UUID> mealIds) {
         List<Meal> meals = new ArrayList<>();
         for (UUID id : mealIds) {
@@ -172,14 +220,12 @@ public class MealService {
         return meals;
     }
 
-    public boolean validateMealsIds(List<UUID> mealsIds) {
+    public boolean checkMealsById(List<UUID> mealIds) {
+       return mealIds.stream().allMatch(id ->  this.checkMealById(id));
+    }
 
-        for (UUID mealId : mealsIds) {
-            if (!mealRepository.findById(mealId).isPresent()) {
-                return false;
-            }
-        }
-        return true;
+    public boolean checkMealById(UUID mealId) {
+        return mealRepository.existsById(mealId);
     }
 
     public double calculateNutrition(Map<Ingredient, Double> ingredients,Function<Ingredient,Double> valueExtractor){
@@ -205,16 +251,6 @@ public class MealService {
         eventPublisher.publishMealUpdatedEvent(allMeals.get(0));
     }
 
-    public Map<Ingredient, Double> mapIngredientsWithWeightByIngredientId(Map<UUID, Double> ingredientsWithWeight) {
-        Map<Ingredient, Double> ingredients = new HashMap<>();
-        for (Map.Entry<UUID, Double> entry : ingredientsWithWeight.entrySet()) {
-            UUID ingredientId = entry.getKey();
-            Double weight = entry.getValue();
-            Ingredient ingredient = ingredientService.getById(ingredientId);
-            ingredients.put(ingredient, weight);
-        }
-        return ingredients;
-    }
     @EventListener
     public void handleIngredientUpdatedEvent(IngredientUpdatedEvent event) {
         this.updateAllNutrition();

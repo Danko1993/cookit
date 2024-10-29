@@ -32,6 +32,11 @@ public class ShoppingListController {
         return shoppingListService.addShoppingListAndBindWithUser(shoppingListDto);
     }
 
+    @PatchMapping("/add_ingredients_from_schedule")
+    public ResponseEntity<String> addIngredientsFromSchedules(@RequestParam List<UUID> mealSchedulesId, @RequestParam UUID shoppingListId) {
+        return shoppingListService.addIngredientsFromMealSchedules(mealSchedulesId,shoppingListId);
+    }
+
     @GetMapping("/get_by_user")
     public ResponseEntity<List<ReadyShopingListDto>> getShoppingListByUser(@RequestParam("id") UUID id) {
         return shoppingListService.getReadyShoppingListsByUser(id);

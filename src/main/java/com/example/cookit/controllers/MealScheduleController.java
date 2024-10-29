@@ -1,9 +1,6 @@
 package com.example.cookit.controllers;
 
-import com.example.cookit.DTO.DietPlanAppUserDto;
-import com.example.cookit.DTO.MealScheduleDto;
-import com.example.cookit.DTO.SendMealScheduleDto;
-import com.example.cookit.DTO.UpdateMealScheduleDto;
+import com.example.cookit.DTO.*;
 import com.example.cookit.services.MealScheduleService;
 import com.example.cookit.services.ValidationErrorService;
 import jakarta.validation.Valid;
@@ -35,6 +32,21 @@ public class MealScheduleController {
         }
         return mealScheduleService.addMealScheduleAndBindWithDietPlan(mealScheduleDto);
     }
+
+    @PatchMapping("/add_meal")
+    public ResponseEntity<String> addMealToMealSchedule(@RequestBody MealScheduleMealDto mealScheduleMealDto
+            , BindingResult result) {
+        if (result!=null && result.hasErrors()) {
+            return validationErrorService.returnValidationErrors(result);
+        }
+        return mealScheduleService.addMealToMealSchedule(mealScheduleMealDto);
+    }
+
+    @PatchMapping("/delete_meal")
+    public ResponseEntity<String> deleteMealFromMealSchedule(@RequestParam UUID mealId, @RequestParam UUID mealScheduleId) {
+        return mealScheduleService.deleteMealFromMealSchedule(mealId, mealScheduleId);
+    }
+
 
     @PatchMapping("/update")
     public ResponseEntity<String> updateMealSchedule(@RequestBody @Valid UpdateMealScheduleDto updateMealScheduleDto, BindingResult result) {

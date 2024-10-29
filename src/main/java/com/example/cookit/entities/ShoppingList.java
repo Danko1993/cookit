@@ -28,5 +28,6 @@ public class ShoppingList {
     @Column(name = "ingredient_weight")
     private Map<String, Double> ingredientsWithWeight = new HashMap<>();
 
+
     boolean isBought;
 }

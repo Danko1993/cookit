@@ -4,19 +4,19 @@ import com.example.cookit.DTO.IngredientDto;
 import com.example.cookit.DTO.UpdateIngredientDto;
 import com.example.cookit.entities.Ingredient;
 import com.example.cookit.events.EventPublisher;
-import com.example.cookit.events.IngredientUpdatedEvent;
 import com.example.cookit.mappers.IngredientMapper;
 import com.example.cookit.repositories.IngredientRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -27,24 +27,44 @@ public class IngredientService {
     private EventPublisher eventPublisher;
 
     private final IngredientMapper ingredientMapper = IngredientMapper.INSTANCE;
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Transactional
     public ResponseEntity<String> addIngredient(IngredientDto ingredientDto) {
         log.info("Adding ingredient " + ingredientDto.name() + " to the database");
-        ingredientRepository.save(ingredientMapper.toEntity(ingredientDto));
+        Ingredient ingredient = ingredientMapper.toEntity(ingredientDto);
+        ingredientRepository.save(ingredient);
         log.info("Ingredient " + ingredientDto.name() + " added to the database");
         return new ResponseEntity<>("Ingredient " + ingredientDto.name() + " added to the database",HttpStatus.CREATED);
     }
+
     @Transactional
-    public ResponseEntity<String> addIngredients(List<IngredientDto> ingredientDtos) {
-        log.info("Adding ingredients " + ingredientDtos.toString() + " ingredients to the database");
-        for (IngredientDto ingredientDto : ingredientDtos) {
-            this.addIngredient(ingredientDto);
-            log.info("Ingredient " + ingredientDto.name() + " added to the database");
+    public ResponseEntity<String> addOrUpdateIngredientPhoto(String id, MultipartFile file) {
+        UUID ingredientId = UUID.fromString(id);
+        if (ingredientRepository.existsById(ingredientId)) {
+            Ingredient ingredient = ingredientRepository.findById(ingredientId).get();
+            if (!ingredient.getImagePath().isEmpty()){
+                try {
+                    fileStorageService.deleteFile(ingredient.getImagePath());
+                } catch (IOException e) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+                }
+                ingredient.setImagePath("");
+            }
+            String path;
+            try {
+                path=fileStorageService.saveFile(file,"ingredient");
+            }catch (IOException e){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            }
+            ingredient.setImagePath(path);
+            ingredientRepository.save(ingredient);
+            return new ResponseEntity<>("Added ingredient photo.",HttpStatus.CREATED);
         }
-        log.info("Ingredients added to the database");
-        return new ResponseEntity<>("Ingredients " + ingredientDtos.toString() + " added to the database",HttpStatus.CREATED);
+        return new ResponseEntity<>("Ingredient with id " + ingredientId + " not found",HttpStatus.NOT_FOUND);
     }
+
     @Transactional
     public ResponseEntity<String> deleteIngredient(UUID id) {
         if (ingredientRepository.existsById(id)) {
@@ -97,8 +117,8 @@ public class IngredientService {
         return ingredientRepository.findAll().size();
     }
 
-    public boolean ingredientsExist(List<UUID> ids) {
-       return ids.stream().allMatch(id -> ingredientRepository.existsById(id));
+    public boolean ingredientExist(UUID id) {
+       return ingredientRepository.existsById(id);
     }
 
 }

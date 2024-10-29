@@ -40,6 +40,8 @@ public class Meal {
 
     private double fats;
 
+    private String imagePath;
+
     @Override
     public String toString() {
         return "Meal{" +

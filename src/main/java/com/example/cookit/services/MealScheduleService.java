@@ -42,24 +42,56 @@ public class MealScheduleService {
         log.info("Checking id diet plan with id {} exists.", mealScheduleDto.dietPlanId());
         if (dietPlanService.existById(mealScheduleDto.dietPlanId())) {
             log.info("Diet plan with id {} found.", mealScheduleDto.dietPlanId());
-            boolean checkMeals = mealService.validateMealsIds(mealScheduleDto.mealsIds());
-            if (checkMeals) {
                 MealSchedule mealSchedule = mealScheduleMapper.toEntity(mealScheduleDto);
-                List<Meal> meals = mealService.getMealsById(mealScheduleDto.mealsIds());
-                this.setNutrition(mealSchedule, meals);
-                mealSchedule.setMeals(meals);
                 mealScheduleRepository.save(mealSchedule);
                 log.info("Meal schedule added successfully.");
                 return new ResponseEntity<>("Meal schedule added successfully.", HttpStatus.CREATED);
-            }
-            else {
-                log.warn("At least one meal not found in database.");
-                return new ResponseEntity<>("At least one meal not found in database.", HttpStatus.NOT_FOUND);
-            }
         }
         log.warn("Diet plan with id {} not found.", mealScheduleDto.dietPlanId());
         return new ResponseEntity<>("Diet plan with id" + mealScheduleDto.dietPlanId() + " not found.", HttpStatus.NOT_FOUND);
 
+    }
+    @Transactional
+    public ResponseEntity<String> addMealToMealSchedule(MealScheduleMealDto mealScheduleMealDto) {
+        if (mealService.checkMealById(mealScheduleMealDto.mealId())) {
+            log.info("Meal with id {} found.", mealScheduleMealDto.mealId());
+            if (mealScheduleRepository.existsById(mealScheduleMealDto.mealId())) {
+                log.info("Meal schedule with id {} found.", mealScheduleMealDto.mealId());
+                MealSchedule  mealSchedule = mealScheduleRepository.findById(mealScheduleMealDto.mealId()).get();
+                Meal meal = mealService.getById(mealScheduleMealDto.mealId());
+                List<Meal> mealScheduleMeals = mealSchedule.getMeals();
+                mealScheduleMeals.add(meal);
+                mealSchedule.setMeals(mealScheduleMeals);
+                this.setNutrition(mealSchedule, mealScheduleMeals);
+                mealScheduleRepository.save(mealSchedule);
+                log.info("Meal added successfully.");
+                return new ResponseEntity<>("Meal added successfully.", HttpStatus.OK);
+            }
+            log.warn("Meal schedule with id {} not found.", mealScheduleMealDto.mealId());
+            return new ResponseEntity<>("Meal schedule with id " + mealScheduleMealDto.mealId() + " not found.", HttpStatus.NOT_FOUND);
+        }
+        log.warn("Meal with id {} not found.", mealScheduleMealDto.mealId());
+        return new ResponseEntity<>("Meal with id " + mealScheduleMealDto.mealId() + " not found.", HttpStatus.NOT_FOUND);
+    }
+    @Transactional
+    public ResponseEntity<String> deleteMealFromMealSchedule(UUID mealId, UUID mealScheduleId) {
+        if (mealScheduleRepository.existsById(mealScheduleId)) {
+            log.info("Meal schedule with id {} found.", mealScheduleId);
+            if (mealService.checkMealById(mealScheduleId)) {
+                MealSchedule mealSchedule = mealScheduleRepository.findById(mealScheduleId).get();
+                List<Meal> mealScheduleMeals = mealSchedule.getMeals();
+                Meal meal = mealService.getById(mealId);
+                mealScheduleMeals.remove(meal);
+                mealSchedule.setMeals(mealScheduleMeals);
+                this.setNutrition(mealSchedule, mealScheduleMeals);
+                mealScheduleRepository.save(mealSchedule);
+                return new ResponseEntity<>("Meal deleted successfully.", HttpStatus.OK);
+            }
+            log.warn("Meal with id {} not found.", mealScheduleId);
+            return new ResponseEntity<>("Meal with id " + mealScheduleId + " not found.", HttpStatus.NOT_FOUND);
+        }
+        log.warn("Meal schedule with id {} not found.", mealScheduleId);
+        return new ResponseEntity<>("Meal schedule with id " + mealScheduleId + " not found.", HttpStatus.NOT_FOUND);
     }
 
     @Transactional
@@ -69,7 +101,7 @@ public class MealScheduleService {
             log.info("Meal schedule with id {} found.", updateMealScheduleDto.mealScheduleId());
             MealSchedule existingMealSchedule = mealScheduleRepository.findById(updateMealScheduleDto.mealScheduleId()).get();
             existingMealSchedule.setDate(updateMealScheduleDto.date());
-            boolean checkMeals = mealService.validateMealsIds(updateMealScheduleDto.mealIds());
+            boolean checkMeals = mealService.checkMealsById(updateMealScheduleDto.mealIds());
             if (!checkMeals) {
                 log.warn("At least one meal not found in database.");
                 return new ResponseEntity<>("At least one meal not found in database.", HttpStatus.NOT_FOUND);
@@ -116,6 +148,14 @@ public class MealScheduleService {
         return null;
     }
 
+    public MealSchedule getMealScheduleById(UUID id) {
+        log.info("Checking if provided meal schedule exist.");
+        if (mealScheduleRepository.existsById(id)) {
+            return mealScheduleRepository.findById(id).orElse(null);
+        }
+        return null;
+    }
+
     public boolean checkMealSchedules(List<UUID> mealIds) {
         return mealIds.stream().allMatch(id -> this.checkMealSchedule(id));
     }
@@ -155,7 +195,8 @@ public class MealScheduleService {
     }
 
     public void setNutrition(MealSchedule mealSchedule, List<Meal> meals){
-        meals.stream().forEach(meal -> {
+        if (meals.size()>0){
+            meals.stream().forEach(meal -> {
             double calories = meal.getCalories();
             double proteins = meal.getProteins();
             double fats = meal.getFats();
@@ -164,7 +205,13 @@ public class MealScheduleService {
             mealSchedule.setProteins(countProteins(meals));
             mealSchedule.setFats(countFats(meals));
             mealSchedule.setCarbs(countCarbs(meals));
-        });
+        });}
+       else {
+           mealSchedule.setCalories(0);
+           mealSchedule.setProteins(0);
+           mealSchedule.setFats(0);
+           mealSchedule.setCarbs(0);
+        }
     }
 
     public void updateAllNutrition(){

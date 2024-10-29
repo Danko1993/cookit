@@ -10,8 +10,6 @@ public record MealScheduleDto(
         @NotNull(message = "Diet plan id must be provided.")
         UUID dietPlanId,
         @NotNull(message = "Date must be provided")
-        Date date,
-        @NotNull(message = "Meal ids must be provided")
-        List<UUID> mealsIds
+        Date date
 ) {
 }

@@ -34,4 +34,6 @@ public class AppUser {
     @JsonManagedReference
     private List<ShoppingList> shoppingLists = new ArrayList<>();
 
+    private String imagePath;
+
 }

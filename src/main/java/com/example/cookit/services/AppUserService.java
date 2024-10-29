@@ -13,8 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 
+import java.io.IOException;
 import java.util.UUID;
 
 @Service
@@ -32,6 +34,8 @@ public class AppUserService {
 
 
     private final AppUserMapper appUserMapper = AppUserMapper.INSTANCE;
+    @Autowired
+    private FileStorageService fileStorageService;
 
     @Transactional
     public ResponseEntity<String> registerUser(RegisterDto registerDto) {
@@ -70,6 +74,34 @@ public class AppUserService {
             log.info("Invalid activation token");
             return new ResponseEntity<>("Invalid activation token", HttpStatus.CONFLICT);
         }
+    }
+
+    @Transactional
+    public ResponseEntity<String> addOrUpdatePhoto (String id, MultipartFile file) {
+        try {
+            UUID appUserId = UUID.fromString(id);
+
+            if (appUserRepository.existsById(appUserId)) {
+                AppUser appUser = appUserRepository.findById(appUserId).get();
+                if (appUser.getImagePath().length() > 0) {
+                    fileStorageService.deleteFile(appUser.getImagePath());
+                    appUser.setImagePath("");
+                }
+                String path;
+                try{
+                    path = fileStorageService.saveFile(file,"appuser");
+                    appUser.setImagePath(path);
+                    appUserRepository.save(appUser);
+                    return new ResponseEntity<>("Image saved successfully", HttpStatus.CREATED);
+                }catch (IOException e){
+                    return new ResponseEntity<>("Image not found", HttpStatus.NOT_FOUND);
+                }
+            }
+            return new ResponseEntity<>("App user not found", HttpStatus.NOT_FOUND);
+        }catch (Exception e){
+            return new ResponseEntity<>("Id must be type of UUID", HttpStatus.NOT_FOUND);
+        }
+
     }
 
     public ResponseEntity<String> resendToken(String email) {

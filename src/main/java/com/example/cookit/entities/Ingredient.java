@@ -26,4 +26,6 @@ public class Ingredient {
 
     private double fatsPer100g;
 
+    private String imagePath;
+
 }

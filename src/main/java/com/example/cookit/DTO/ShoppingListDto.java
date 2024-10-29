@@ -10,8 +10,6 @@ public record ShoppingListDto(
         @NotBlank(message = "Name must be provided.")
         String name,
         @NotNull(message = "AppUserId must be provided.")
-        UUID appUserId,
-        @NotNull(message = "MealSchedules must be provided")
-        List<UUID> mealScheduleIds
+        UUID appUserId
 ) {
 }
